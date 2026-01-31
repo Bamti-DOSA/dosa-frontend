@@ -137,3 +137,18 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# --- Custom Settings for SIMVEX ---
+
+# 1. OS System Files (팀원 중 맥북/윈도우 사용자가 섞여있을 때 충돌 방지)
+.DS_Store
+Thumbs.db
+
+# 2. Heavy 3D Assets (선택사항)
+# 만약 3D 모델(.glb)이 100MB가 넘거나, S3에서 불러올 예정이라면 주석을 푸세요.
+# *.glb
+# *.gltf
+# *.obj
+
+# 3. VS Code Settings
+.vscode/
