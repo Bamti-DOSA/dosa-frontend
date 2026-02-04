@@ -8,7 +8,7 @@ const StudyList = () => {
     <>
       <div className="flex flex-row">
         <SideBar />
-        <div className="px-[60px] py-[46px] items-center justify-center w-full bg-gray-50">
+        <div className="ml-[275px] px-[60px] py-[46px] items-center justify-center w-full bg-gray-50">
           <div alt="제목" className="mt-[46px] t-24-semi ">
             학습 페이지
           </div>
@@ -27,7 +27,7 @@ const StudyList = () => {
             </div>
           </div>
 
-          <hr className="border-t-[1px] border-[##9D9D9D] mt-[40px] mb-[80px]" />
+          <hr className="border-b-[1px] border-gray-5 mt-[24px] mb-[72px]" />
 
           <StudySection type={"Robotics & Automation"} />
           <StudySection type={"New Courses"} />

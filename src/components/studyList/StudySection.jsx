@@ -15,7 +15,7 @@ const StudySection = ({ type }) => {
         </div>
         <div
           alt="학습 카드 목록"
-          className="flex flex-row gap-[16px] mb-[72px]"
+          className="flex flex-row gap-[16px] mb-[88px]"
         >
           <StudyCard isInProgress={true} />
           <StudyCard isInProgress={type === "진행 중인 학습"} />

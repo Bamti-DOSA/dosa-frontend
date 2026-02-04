@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Home,
   BookOpen,
@@ -12,10 +12,7 @@ import {
 } from "lucide-react";
 
 const SideBar = () => {
-  const [activeMenu, setActiveMenu] = useState("진행 중인 학습");
-  useEffect(() => {
-    setActiveMenu("홈");
-  }, []);
+  const [activeMenu, setActiveMenu] = useState("홈");
 
   const navGroups = [
     {
@@ -44,13 +41,11 @@ const SideBar = () => {
   ];
 
   return (
-    <div className="bg-[#EDF2F6] flex flex-col p-[20px] w-[275px] min-h-screen border-r border-[#EEEEEE] shrink-0 font-['Pretendard']">
+    <div className="bg-[#EDF2F6] fixed top-0 flex flex-col p-[20px] w-[275px] min-h-screen border-r border-[#EEEEEE] shrink-0 font-['Pretendard']">
       {/* 로고 영역 */}
-      <div className="flex items-center gap-3 mb-[49px] px-[8px]">
-        <div className="w-[32px] h-[32px] bg-[#B5C0C6] rounded-[4px]" />
-        <div className="text-[20px] font-bold tracking-tight text-black">
-          SIMVEX
-        </div>
+      <div className="flex items-center mb-[48px] gap-3">
+        <div className="w-[32px] h-[32px] bg-[#D3D3D3] rounded-[4px]" />
+        <div className="t-20-bold">SIMVEX</div>
       </div>
 
       <div className="mb-[32px]">
