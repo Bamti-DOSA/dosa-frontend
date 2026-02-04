@@ -94,8 +94,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
         <input type="file" accept="image/*" ref={imageInputRef} className="hidden" onChange={(e) => handleFileChange(e, "image")} />
         <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleFileChange(e, "file")} />
 
-        <div className="mb-3">
-          {initialData ? (
+        {initialData ? (
              <span className="bg-[#6B7280] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                 메모 수정
              </span>
@@ -104,20 +103,19 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
                 onClick={onOpenAiNote}
                 className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
                     isAiNoteOpen 
-                    ? 'bg-[#CD3F3F] text-white hover:bg-[#b03535] shadow-md' 
-                    : 'bg-[#6B7280] hover:bg-gray-800 text-white'
+                    ? 'bg-[#CD3F3F] text-white hover:bg-[#b03535] shadow-md border border-[#CD3F3F]'  //여기 추후 수정
+                    : 'bg-white border border-ai-gradient text-main-1 hover:bg-blue-50'
                 }`}
             >
                 <MessageSquare size={10} />
                 AI 어시스턴트
             </button>
           )}
-        </div>
 
         <input 
           type="text"
           placeholder="제목"
-          className="w-full bg-transparent text-sm font-bold text-gray-900 placeholder-gray-400 outline-none pb-2"
+          className="w-full pt-5 bg-transparent text-sm font-bold text-gray-900 placeholder-gray-400 outline-none pb-2"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           autoFocus
@@ -125,7 +123,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
 
         <div className="h-[1px] w-full bg-gray-300 mb-3 opacity-50"></div>
 
-        {/* 👇 [추가] 사진 미리보기 영역 (본문 위) */}
+        {/* 사진 미리보기 영역 (본문 위) */}
         {imageAttachments.length > 0 && (
             <div className="flex gap-2 mb-2 overflow-x-auto pt-2">
                 {imageAttachments.map(item => (
@@ -153,7 +151,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
           onChange={(e) => setContent(e.target.value)}
         />
         
-        {/* 👇 [수정] 기타 첨부파일(파일, 링크) 목록 표시 (본문 아래) */}
+        {/* 기타 첨부파일(파일, 링크) 목록 표시 (본문 아래) */}
         {otherAttachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3 mt-1">
                 {otherAttachments.map(item => (
@@ -172,7 +170,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
                  <div className="relative">
                     <button 
                         onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
-                        className={`w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 shadow-sm transition-transform ${isAttachMenuOpen ? 'rotate-45' : ''}`}
+                        className={`w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-800 transition-transform ${isAttachMenuOpen ? 'rotate-45' : ''}`}
                     >
                         <Plus size={18} />
                     </button>
@@ -194,31 +192,43 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
 
                  {/* 카테고리 버튼 */}
                  <div className="relative">
-                    <button onClick={() => setActiveMenu(activeMenu === 'category' ? null : 'category')} className={`px-3 py-1.5 rounded-full text-xs font-bold border shadow-sm transition-colors ${selectedCategory !== '카테고리' ? 'bg-[#B8B8B8] border-[#C6C6C6] text-[#6F6F6F]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>{selectedCategory}</button>
+                    <button onClick={() => setActiveMenu(activeMenu === 'category' ? null : 'category')} className={`px-3 py-1.5 rounded-full text-xs transition-colors ${selectedCategory !== '카테고리' ? 'bg-main-2 text-white' : 'bg-bg-2 text-gray-700 border border-gray-500 hover:bg-gray-50'}`}>{selectedCategory}</button>
                     {activeMenu === 'category' && (
                         <div className="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-xl shadow-xl border border-blue-100 overflow-hidden z-30 animate-fade-in">
                         <div className="p-2 space-y-1">
                             {categoryList.map((cat, idx) => (
-                                <button key={idx} onClick={() => { setSelectedCategory(cat); setActiveMenu(null); }} className="w-full text-left px-3 py-2 text-xs font-bold text-gray-700 hover:bg-[#EFEFEF] rounded-lg transition-colors">{cat}</button>
+                                <button key={idx} onClick={() => { setSelectedCategory(cat); setActiveMenu(null); }} className="w-full text-left px-3 py-2 text-xs text-gray-900 hover:bg-[#EDF2F6] rounded-lg transition-colors">{cat}</button>
                             ))}
-                            <button onClick={handleAddCustomCategory} className="w-full text-center mt-1 px-3 py-2.5 text-xs font-bold bg-[#E5E7EB] text-gray-600 hover:bg-[#EFEFEF] rounded-lg transition-colors">카테고리 추가</button>
+                            <button onClick={handleAddCustomCategory} className="w-full text-center mt-1 px-3 py-2.5 text-xs bg-[#EDF2F6] text-gray-600 hover:bg-[#D0D0D0] rounded-lg transition-colors">카테고리 추가<Plus size={14} className=" pb-1 pl-1 inline-block text-gray-600" /></button>
                         </div>
                         </div>
                     )}
                  </div>
 
                  {/* 종류 버튼 */}
-                 <div className="relative">
-                    <button onClick={() => setActiveMenu(activeMenu === 'type' ? null : 'type')} className={`px-3 py-1.5 rounded-full text-xs font-bold border shadow-sm transition-colors ${selectedType !== '종류' ? 'bg-[#B8B8B8] border-[#C6C6C6] text-[#6F6F6F]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>{selectedType === 'important' ? '중요' : selectedType === 'general' ? '일반' : '종류'}</button>
-                    {activeMenu === 'type' && (
-                        <div className="absolute bottom-full left-0 mb-2 w-32 bg-white rounded-xl shadow-xl border border-blue-100 overflow-hidden z-30 animate-fade-in">
-                            <div className="p-2 space-y-1">
-                                <button onClick={() => { setSelectedType('important'); setActiveMenu(null); }} className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-[#EFEFEF] hover:font-bold rounded-lg transition-colors">중요</button>
-                                <button onClick={() => { setSelectedType('general'); setActiveMenu(null); }} className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-[#EFEFEF] hover:font-bold rounded-lg transition-colors">일반</button>
-                            </div>
-                        </div>
-                    )}
-                 </div>
+                <div className="relative">
+                <button 
+                    onClick={() => setActiveMenu(activeMenu === 'type' ? null : 'type')} 
+                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                    selectedType === 'important' 
+                        ? 'bg-[#FF9191] border-[#FF9191] text-white'   // 중요 선택 시 (Red)
+                        : selectedType === 'general'
+                        ? 'bg-[#68A2FF] border-[#68A2FF] text-white' // 일반 선택 시 (Blue)
+                        : 'bg-bg-2 border-gray-500 text-gray-500 hover:bg-gray-50' // 선택 안됨 (Default)
+                    }`}
+                >
+                    {selectedType === 'important' ? '중요' : selectedType === 'general' ? '일반' : '종류'}
+                </button>
+                
+                {activeMenu === 'type' && (
+                    <div className="absolute bottom-full left-0 mb-2 w-32 bg-white rounded-xl shadow-xl border border-blue-100 overflow-hidden z-30 animate-fade-in">
+                    <div className="p-2 space-y-1">
+                        <button onClick={() => { setSelectedType('important'); setActiveMenu(null); }} className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-[#EFEFEF] hover:font-bold rounded-lg transition-colors">중요</button>
+                        <button onClick={() => { setSelectedType('general'); setActiveMenu(null); }} className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-[#EFEFEF] hover:font-bold rounded-lg transition-colors">일반</button>
+                    </div>
+                    </div>
+                )}
+                </div>
             </div>
             
             <button onClick={handleSave} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-md ${content.trim() || attachments.length > 0 ? 'bg-[#374151] text-white hover:bg-black' : 'bg-gray-300 text-white cursor-not-allowed'}`}><ArrowUp size={18} strokeWidth={3} /></button>

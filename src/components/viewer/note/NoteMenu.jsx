@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import rotate from '../../../assets/icons/rotate.svg';
-import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const NoteMenu = ({ groupedNotes = {}, onClose, onNoteClick }) => {
   const [openCategories, setOpenCategories] = useState({});
@@ -9,60 +9,28 @@ const NoteMenu = ({ groupedNotes = {}, onClose, onNoteClick }) => {
 
   return (
     <>
-      {/* 1. 투명한 배경 (클릭 시 닫힘) - 흐림/색상 제거 */}
+      {/* 1. 투명한 배경 (클릭 시 닫힘) */}
       <div 
         onClick={onClose}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'transparent', // 완전 투명
-          zIndex: 9990,
-          cursor: 'default'
-        }}
+        className="absolute inset-0 bg-transparent z-[9990] cursor-default"
       />
 
       {/* 2. 사이드바 메뉴 본체 */}
       <div 
-        className="custom-scrollbar"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0, // 세로로 꽉 차게
-          width: '260px', // 가로폭 좁게 고정
-          backgroundColor: '#ffffff',
-          boxShadow: '4px 0 24px rgba(0, 0, 0, 0.08)', // 오른쪽으로 그림자 살짝
-          zIndex: 9999,
-          overflowY: 'auto',
-          borderRight: '1px solid #f3f4f6',
-          // 슬라이드 애니메이션 (왼쪽 -> 오른쪽)
-          animation: 'slideInLeft 0.3s ease-out forwards' 
-        }}
+        className="absolute top-0 left-0 bottom-0 w-[260px] bg-white z-[9999] overflow-y-auto border-r border-gray-100 custom-scrollbar shadow-[4px_0_24px_rgba(0,0,0,0.08)] animate-slideInLeft"
       >
-        {/* 애니메이션 키프레임 정의 (스타일 태그 삽입) */}
-        <style>
-          {`
-            @keyframes slideInLeft {
-              from { transform: translateX(-100%); opacity: 0; }
-              to { transform: translateX(0); opacity: 1; }
-            }
-          `}
-        </style>
-
         <div className="p-5">
-          {/* 기존 메모장 이동 링크 (이미지 참고) */}
+          {/* 기존 메모장 이동 링크 */}
           <div className="mb-6">
             <button 
-                onClick={onClose} // 클릭 시 메뉴 닫기
-                className="text-sm text-gray-500 font-medium hover:text-blue-600 transition-colors flex items-center gap-2" // 아이콘 정렬
+                onClick={onClose} 
+                className="w-full text-sm rounded-md text-gray-900 font-medium hover:text-gray-900 hover:bg-gray-100 p-2 transition-colors flex items-center gap-2"
             >
                 <img 
                   src={rotate} 
                   alt="back" 
                   width={16} 
                   height={16} 
-                  // 필요하다면 Tailwind 클래스로 크기 조절 가능
-                  // className="w-4 h-4" 
                 />
                 기존 메모장으로 이동
             </button>

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Menu, MessageSquare } from 'lucide-react';
 
+import fileblack from '../../assets/icons/icon-file-black.svg';
+import file from '../../assets/icons/icon-file.svg';
 import NoteMenu from './note/NoteMenu';
 import NoteItemList from './note/NoteItemList'; 
 import NoteFull from './note/NoteFull';         
@@ -115,13 +117,13 @@ const RightContainer = ({ activeTab, setActiveTab, onOpenAiNote, isAiNoteOpen, a
       
       {/* 삭제 모달 */}
       {deletingNoteId && (
-        <div className="absolute inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in">
           <div className="bg-white rounded-[16px] p-6 shadow-2xl w-[320px] flex flex-col items-center animate-scale-in">
             <h3 className="text-[15px] font-bold text-gray-900 mb-2 mt-1">메모를 삭제하시겠습니까?</h3>
             <p className="text-xs text-gray-600 text-center mb-4">삭제된 메모는 복구할 수 없습니다.<br/>확인 후 삭제를 진행해주세요</p>
             <div className="flex gap-2 w-full">
-              <button onClick={() => setDeletingNoteId(null)} className="flex-1 py-3 rounded-xl bg-[#E2E4EA] text-gray-600 text-xs font-bold hover:bg-gray-300">뒤로가기</button>
-              <button onClick={handleDeleteConfirm} className="flex-1 py-3 rounded-xl bg-[#4B4B4B] text-white text-xs font-bold hover:bg-black">삭제하기</button>
+              <button onClick={() => setDeletingNoteId(null)} className="flex-1 py-3 rounded-xl bg-main-3 text-white text-xs font-bold hover:bg-gray-500">뒤로가기</button>
+              <button onClick={handleDeleteConfirm} className="flex-1 py-3 rounded-xl bg-main-1 text-white text-xs font-bold hover:bg-sky-800">삭제하기</button>
             </div>
           </div>
         </div>
@@ -132,7 +134,7 @@ const RightContainer = ({ activeTab, setActiveTab, onOpenAiNote, isAiNoteOpen, a
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)} 
-            className={`p-1 rounded transition-colors ${isMenuOpen ? 'bg-gray-100 text-gray-900' : 'text-gray-800 hover:bg-gray-100'}`}
+            className={`p-1 rounded-md transition-colors ${isMenuOpen ? 'bg-bg-1 text-main-1' : 'text-gray-800 hover:bg-gray-100'}`}
           >
             <Menu size={24} strokeWidth={2.5} />
           </button>
@@ -141,8 +143,8 @@ const RightContainer = ({ activeTab, setActiveTab, onOpenAiNote, isAiNoteOpen, a
           </h1>
         </div>
         <div className="flex bg-[#EEEFF0] p-1 rounded-lg">
-            <button onClick={() => { setActiveTab('note'); setIsMenuOpen(false); }} className={`flex items-center gap-1 px-3 py-1 rounded shadow-sm text-xs font-bold transition-all ${activeTab === 'note' ? 'bg-white text-gray-800' : 'bg-transparent text-gray-400'}`}><span>📄</span> 메모장</button>
-            <button onClick={() => { setActiveTab('ai'); setIsMenuOpen(false); }} className={`flex items-center gap-1 px-3 py-1 rounded shadow-sm text-xs font-bold transition-all ${activeTab === 'ai' ? 'bg-white text-gray-800' : 'bg-transparent text-gray-400'}`}><MessageSquare size={14} /> AI</button>
+            <button onClick={() => { setActiveTab('note'); setIsMenuOpen(false); }} className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-bold transition-all ${activeTab === 'note' ? 'bg-white text-gray-800' : 'bg-transparent text-gray-400'}`}><img src={activeTab === 'note' ? fileblack : file} alt="file icon" className="w-3 h-3"/> 메모장</button>
+            <button onClick={() => { setActiveTab('ai'); setIsMenuOpen(false); }} className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-bold transition-all ${activeTab === 'ai' ? 'bg-white text-gray-800' : 'bg-transparent text-gray-400'}`}><MessageSquare size={14} /> AI</button>
         </div>
       </div>
 
