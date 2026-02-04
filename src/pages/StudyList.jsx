@@ -1,6 +1,7 @@
 import SideBar from "../components/studyList/SideBar";
 import StudyCard from "../components/studyList/StudyCard";
 import StudySection from "../components/studyList/StudySection";
+import { ArrowRight } from "lucide-react";
 
 const StudyList = () => {
   return (
@@ -14,9 +15,9 @@ const StudyList = () => {
           <div alt="진행 중인 학습 목록" className="mt-[110px] mb-[40x] ">
             <div className="flex flex-row justify-between items-center mb-[24px]">
               <div className="t-18-semi">진행 중인 학습</div>
-              <div className="gap-[8px] flex flex-row text-[#5A5A5A] b-16-semi">
+              <div className="gap-[8px] flex flex-row text-[#5A5A5A] b-16-semi justify-center items-center">
                 전체보기
-                <img src="../src/assets/icons/icon-arrow-right.svg" />
+                <ArrowRight color="#5A5A5A" />
               </div>
             </div>
             <div className="flex flex-row gap-[16px]">

@@ -13,15 +13,15 @@
   --color-bg-2: #edf2f6; /* 연한 그레이 배경 */
 
   /* --- Grayscale Palette (상단 팔레트 순서) --- */
-  --color-gray-50: #f6f7f8; /* */
-  --color-gray-100: #e9ecef; /* */
-  --color-gray-200: #d1d6db; /* */
-  --color-gray-300: #c4c9cf; /* */
-  --color-gray-400: #adb4bc; /* */
-  --color-gray-500: #888e96; /* */
-  --color-gray-600: #5f6368; /* */
-  --color-gray-700: #3a3c40; /* */
-  --color-gray-800: #262729; /* */
+  --color-gray-1: #f6f7f8; /* */
+  --color-gray-2: #e9ecef; /* */
+  --color-gray-3: #d1d6db; /* */
+  --color-gray-4: #c4c9cf; /* */
+  --color-gray-5: #adb4bc; /* */
+  --color-gray-6: #888e96; /* */
+  --color-gray-7: #5f6368; /* */
+  --color-gray-8: #3a3c40; /* */
+  --color-gray-9: #262729; /* */
 
   /* --- Accent Colors --- */
   /* Green */
@@ -72,6 +72,9 @@
   }
   .t-24-semi {
     @apply text-[24px] font-semibold leading-[1.2];
+  }
+  .t-24-bold {
+    @apply text-[24px] font-bold leading-[1.2];
   }
 
   /* --- Body Typography --- */
