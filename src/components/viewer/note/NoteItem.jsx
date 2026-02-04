@@ -29,14 +29,14 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
       
       {/* 노트 카드 본문 */}
       <div 
-        className={`p-4 rounded-xl shadow-sm border transition-all duration-300 group relative ${
+        className={`p-4 rounded-xl transition-all duration-300 group relative ${
           isEditing 
-            ? 'bg-[#FFFDFD] border-red-400 ring-1 ring-red-400 shadow-md' 
-            : 'bg-[#F0F0F2] border-gray-100 hover:border-gray-300' 
+            ? 'bg-bg-2 border-red-400 ring-1 ring-red-400' 
+            : 'bg-bg-2 hover:border-gray-300' 
         }`}
       >
         <div className="flex justify-between items-start mb-1">
-          <span className="text-[11px] text-gray-400 font-medium tracking-tight">{note.date}</span>
+          <span className="text-[12px] text-[#818181] font-medium tracking-tight">{note.date}</span>
           
           <div className="relative" ref={menuRef}>
             <button 
@@ -50,16 +50,16 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
             </button>
 
             {isMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-20 bg-white rounded-lg shadow-xl border border-gray-100 z-20 py-1 overflow-hidden animate-fade-in">
+              <div className="absolute right-0 top-full mt-1 w-20 bg-white rounded-lg border border-gray-100 z-20 py-1 px-1 overflow-hidden animate-fade-in">
                 <button 
                   onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); onEdit && onEdit(note.id); }} 
-                  className="block w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-[#EFEFEF] transition-colors"
+                  className="block w-full text-left rounded-sm px-2 py-2 text-xs font-medium text-black hover:bg-bg-2 transition-colors"
                 >
                   수정
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); onDelete && onDelete(note.id); }} 
-                  className="block w-full text-left px-3 py-2 text-xs font-medium text-red-500 hover:bg-[#EFEFEF] transition-colors"
+                  className="block w-full text-left rounded-sm px-2 py-2  text-xs font-medium text-black hover:bg-bg-2 transition-colors"
                 >
                   삭제
                 </button>
@@ -69,19 +69,16 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
         </div>
         
         {note.title && (
-            <>
-                <h3 className="text-sm font-bold text-gray-900 pb-2">{note.title}</h3>
-                <div className="h-[1px] w-full bg-gray-300 mb-3 opacity-50"></div>
-            </>
+            <h3 className="text-[18px] font-bold text-gray-900 pb-3">{note.title}</h3>
         )}
         
-        <p className="text-xs text-gray-600 leading-relaxed mb-3 break-words line-clamp-2 whitespace-pre-wrap">
+        <p className="text-[16px] text-[#676767] leading-relaxed mb-4 break-words line-clamp-2 whitespace-pre-wrap">
           {note.content}
         </p>
         
-        <div className="flex gap-1.5 mt-2">
+        <div className="flex gap-1.5">
           {note.category && (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#BFBFBF] text-white">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-main-2 text-[#FFFFFF]">
               {note.category}
             </span>
           )}
@@ -90,8 +87,8 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
             <span 
               className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                 note.type === 'important' 
-                  ? 'bg-[#FF9292] text-white' 
-                  : 'bg-[#96C28B] text-white' 
+                  ? 'bg-[#FF9191] text-white' 
+                  : 'bg-[#68A2FF] text-white' 
               }`}
             >
               {note.type === 'important' ? '중요' : '일반'}

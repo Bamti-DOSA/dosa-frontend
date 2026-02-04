@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Menu, Share, MessageSquare, FileText, ChevronLeft } from "lucide-react"; 
+import file from "../assets/icons/icon-file.svg";
 
 import LeftContainer from "../components/viewer/LeftContainer";
 import RightContainer from "../components/viewer/RightContainer";
@@ -186,24 +187,18 @@ const Viewer = () => {
           {/* 3. Dock */}
           {isCollapsed && (
             <div className="w-16 h-full flex flex-col items-center animate-fade-in-right shrink-0">
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-2 flex flex-col gap-3">
-                    <button 
-                        onClick={() => handleRestore('note')}
-                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm group relative"
-                    >
-                        <FileText size={20} />
-                        <span className="absolute right-full mr-2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                            메모장 열기
-                        </span>
-                    </button>
+                <div className="bg-white rounded-2xl border border-gray-200 p-2 flex flex-col gap-3">
                     <button 
                         onClick={() => handleRestore('ai')}
-                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm group relative"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-bg-1 hover:text-main-1 transition-all group relative"
                     >
                         <MessageSquare size={20} />
-                         <span className="absolute right-full mr-2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                            AI 채팅 열기
-                        </span>
+                    </button>
+                    <button 
+                        onClick={() => handleRestore('note')}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-bg-1 hover:text-main-1 transition-all group relative"
+                    >
+                        <img src={file} alt="note" className="w-5 h-5" />
                     </button>
                     
                     <div className="w-full h-[1px] bg-gray-100 my-1"></div>

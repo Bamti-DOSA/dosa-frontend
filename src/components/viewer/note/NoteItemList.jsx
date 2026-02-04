@@ -72,7 +72,7 @@ const NoteItemList = ({
         </div>
 
         {/* 하단 입력/버튼 영역 */}
-        <div className="shrink-0 z-30 bg-[#F5F6F8]">
+        <div className="shrink-0 z-30 bg-[#FBFDFF]">
             {isAdding ? (
                 <div className="pb-4 pr-4"> 
                     <NoteInput 
@@ -90,7 +90,7 @@ const NoteItemList = ({
                             onCancelInput(); 
                             setIsAdding(true);
                         }}
-                        className="w-full flex justify-center items-center gap-2 bg-[#E2E4EA] hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl transition-colors shadow-sm"
+                        className="w-full flex justify-center items-center gap-2 bg-[#E5E6EA] border border-[#CFCFCF] hover:bg-gray-300 text-[#000000] font-bold py-3 rounded-xl transition-colors "
                     >
                         Add note <Plus size={18} strokeWidth={2.5} />
                     </button>
