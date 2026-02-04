@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import rotate from '../../../../assets/svgs/note/rotate.svg';
+import rotate from '../../../assets/icons/rotate.svg';
 import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 
 const NoteMenu = ({ groupedNotes = {}, onClose, onNoteClick }) => {

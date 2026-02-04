@@ -1,5 +1,5 @@
 import React from 'react';
-import more from '../../../../assets/svgs/note/more.svg'; // 기존 경로 유지
+import more from '../../../assets/icons/more.svg'
 // 만약 more 아이콘이 없어서 엑박이 뜨면 아래 Lucide 아이콘을 쓰세요
 // import { MoreHorizontal } from 'lucide-react'; 
 
