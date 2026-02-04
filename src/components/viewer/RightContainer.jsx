@@ -117,8 +117,8 @@ const RightContainer = () => {
 
   return (
     <div 
-      className="flex flex-col w-full border-r border-gray-200 font-sans relative overflow-hidden"
-      style={{ height: '100vh', backgroundColor: '#FBFDFF' }} 
+      className="rounded-lg w-full h-full flex flex-col p-6 relative"
+      style={{ height: '100%', backgroundColor: '#FBFDFF' }} 
     >
       {deletingNoteId && (
         <div className="absolute inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in">
