@@ -22,8 +22,7 @@ const getFormattedDate = () => {
     return `${now.getDate()}. ${months[now.getMonth()]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 };
 
-const RightContainer = () => {
-  const [activeTab, setActiveTab] = useState('note');
+const RightContainer = ({ activeTab, setActiveTab }) => {
   const [notes, setNotes] = useState([]); 
   const [isAdding, setIsAdding] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
