@@ -22,15 +22,11 @@ const getFormattedDate = () => {
     return `${now.getDate()}. ${months[now.getMonth()]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 };
 
-const RightContainer = ({ activeTab, setActiveTab }) => {
+const RightContainer = ({ activeTab, setActiveTab, onOpenAiNote, isAiNoteOpen, aiChats, setAiChats }) => {
   const [notes, setNotes] = useState([]); 
   const [isAdding, setIsAdding] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [expandedNoteId, setExpandedNoteId] = useState(null); 
-
-  const [aiChats, setAiChats] = useState([
-    { id: 'a1', date: '4. Feb 10:00', title: 'BLDC 모터 작동법 질문', messages: [] },
-  ]);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [deletingNoteId, setDeletingNoteId] = useState(null);
@@ -116,6 +112,8 @@ const RightContainer = ({ activeTab, setActiveTab }) => {
 
   return (
     <div className="w-full h-full flex flex-col relative bg-[#FBFDFF] rounded-2xl overflow-hidden">
+      
+      {/* 삭제 모달 */}
       {deletingNoteId && (
         <div className="absolute inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in">
           <div className="bg-white rounded-[16px] p-6 shadow-2xl w-[320px] flex flex-col items-center animate-scale-in">
@@ -180,11 +178,15 @@ const RightContainer = ({ activeTab, setActiveTab }) => {
                     onDeleteRequest={handleDeleteRequest}
                     onEditStart={handleEditStart}
                     onNoteExpand={(id) => setExpandedNoteId(id)} 
+                    onOpenAiNote={onOpenAiNote}
+                    isAiNoteOpen={isAiNoteOpen}
                 />
             )
         )}
 
         {/* [TAB 2] AI 화면 */}
+        {/* AssistantAi에 sessions 데이터를 넘겨주어야 실제 대화가 보입니다. 
+           (여기서는 AssistantAi 구현부를 모르므로, 필요 시 props를 추가하세요: sessions={aiChats}) */}
         {activeTab === 'ai' && <AssistantAi />}
       </div>
     </div>

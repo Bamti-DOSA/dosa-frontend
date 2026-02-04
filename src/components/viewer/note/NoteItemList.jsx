@@ -12,18 +12,9 @@ const parseDate = (dateStr) => {
   return new Date(now.getFullYear(), monthMap[monthStr], day, hours, minutes);
 };
 
-// 👇 onNoteExpand가 props로 잘 들어오는지 확인
 const NoteItemList = ({ 
-    notes, 
-    scrollRef, 
-    isAdding, 
-    setIsAdding, 
-    onSave, 
-    onCancelInput, 
-    editingNote, 
-    onDeleteRequest, 
-    onEditStart,
-    onNoteExpand // 👈 부모에게서 받은 함수
+    notes, scrollRef, isAdding, setIsAdding, onSave, onCancelInput, 
+    editingNote, onDeleteRequest, onEditStart, onNoteExpand, onOpenAiNote, isAiNoteOpen 
 }) => {
 
   const sortedNotes = [...notes].sort((a, b) => parseDate(a.date) - parseDate(b.date));
@@ -70,7 +61,6 @@ const NoteItemList = ({
                                         onDelete={onDeleteRequest} 
                                         onEdit={onEditStart}
                                         isEditing={isEditing}
-                                        // 👇 [핵심] 여기가 빠지면 더블클릭 안됨!
                                         onDoubleClick={() => onNoteExpand(note.id)} 
                                     />
                                 </div>
@@ -82,13 +72,15 @@ const NoteItemList = ({
         </div>
 
         {/* 하단 입력/버튼 영역 */}
-        <div className="shrink-0 z-30 bg-[#FBFDFF]">
+        <div className="shrink-0 z-30 bg-[#F5F6F8]">
             {isAdding ? (
                 <div className="pb-4 pr-4"> 
                     <NoteInput 
                         onSave={onSave} 
                         onCancel={onCancelInput} 
-                        initialData={editingNote}    
+                        initialData={editingNote}  
+                        onOpenAiNote={onOpenAiNote}
+                        isAiNoteOpen={isAiNoteOpen}
                     />
                 </div>
             ) : (

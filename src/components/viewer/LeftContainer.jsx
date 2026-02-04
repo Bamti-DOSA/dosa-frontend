@@ -4,8 +4,8 @@ import { OrbitControls, Stage, useGLTF } from "@react-three/drei";
 
 import PartDetail from "../part/PartDetail";
 import PartList from "../part/PartList";
+import AiBriefing from "./ai/AiBriefing"; 
 
-// 3D 모델 렌더링 헬퍼 컴포넌트
 function SinglePartModel({ modelPath }) {
   const { scene } = useGLTF(modelPath);
   return <primitive object={scene.clone()} />;
@@ -13,21 +13,33 @@ function SinglePartModel({ modelPath }) {
 
 const LeftContainer = ({ partsData }) => {
   const [selectedId, setSelectedId] = useState(partsData[0].id);
+  const [showBriefing, setShowBriefing] = useState(true);
+
   const currentPart = partsData.find((p) => p.id === selectedId);
 
   return (
-    <div className="w-full h-full flex flex-col relative">
+    <div className="bg-[#EEEFF0] rounded-lg w-full h-full flex flex-col p-6 relative">
       
       <div className="flex flex-1 gap-6 min-h-0">
         {/* 1. 부품 리스트 */}
-        <PartList
-          parts={partsData}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
+        <div className="h-full overflow-y-auto custom-scrollbar shrink-0 p-1">
+          <PartList
+            parts={partsData}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        </div>
 
         {/* 2. 3D 캔버스 영역 */}
-        <div className="flex-1 bg-white rounded-2xl relative shadow-inner overflow-hidden">
+        <div className="flex-1 bg-[#EEEFF0] rounded-2xl relative overflow-hidden">
+          
+          {showBriefing && (
+            <AiBriefing 
+              className="absolute left-28 z-50" 
+              onClose={() => setShowBriefing(false)} 
+            />
+          )}
+
           <Canvas shadows camera={{ position: [4, 0, 4], fov: 50 }}>
             <Suspense fallback={null}>
               <Stage environment="city" intensity={0.6} contactShadow={false}>
@@ -40,7 +52,9 @@ const LeftContainer = ({ partsData }) => {
       </div>
 
       {/* 3. 하단 설명 카드 */}
-      <PartDetail selectedPart={currentPart} />
+      <div className="mt-6 shrink-0">
+        <PartDetail selectedPart={currentPart} />
+      </div>
     </div>
   );
 };
