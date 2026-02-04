@@ -1,1 +1,137 @@
 @import "tailwindcss";
+
+@theme {
+  /* --- Brand Main Colors --- */
+  --color-main-1: #4981ad; /* 메인 블루 */
+  --color-main-2: #6e808e; /* 서브 그레이 블루 */
+  --color-main-3: #b5c0c6; /* 라이트 그레이 블루 */
+
+  /* --- Background Colors --- */
+  --color-bg-1: #e4ebf1; /* 연한 블루 배경 */
+  --color-bg-2: #edf2f6; /* 연한 그레이 배경 */
+
+  /* --- Grayscale Palette (상단 팔레트 순서) --- */
+  --color-gray-50: #f6f7f8; /* */
+  --color-gray-100: #e9ecef; /* */
+  --color-gray-200: #d1d6db; /* */
+  --color-gray-300: #c4c9cf; /* */
+  --color-gray-400: #adb4bc; /* */
+  --color-gray-500: #888e96; /* */
+  --color-gray-600: #5f6368; /* */
+  --color-gray-700: #3a3c40; /* */
+  --color-gray-800: #262729; /* */
+
+  /* --- Accent Colors --- */
+  /* Green */
+  --color-acc-green-light: #84ebad; /* */
+  --color-acc-green: #5fb682; /* */
+
+  /* Blue */
+  --color-acc-blue-light: #68a2ff; /* */
+  --color-acc-blue: #4b85e2; /* */
+
+  /* Red */
+  --color-acc-red-light: #ff9191; /* */
+  --color-acc-red: #e56969; /* */
+
+  /* --- Typography Utilities --- */
+  /* 가이드의 수치들을 변수화하여 유틸리티로 확장 */
+  --tracking-tight-2: -0.02em;
+  --tracking-tight-1: -0.01em;
+}
+
+@utilities {
+  /* AI 전용 선형 그라데이션 */
+  .bg-ai-gradient {
+    background: linear-gradient(90deg, #4b85e2 0%, #68a2ff 50%, #84ebad 100%);
+  }
+}
+
+/* --- 커스텀 컴포넌트 스타일 (v4 방식) --- */
+@layer components {
+  /* Title Typography */
+  .t-18-semi {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .t-18-bold {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .t-20-semi {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .t-20-bold {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  /* Body Typography */
+  .b-14-reg-160 {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: var(--tracking-tight-2);
+  }
+  .b-14-med {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .b-14-semi {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .b-14-bold {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .b-16-reg-154 {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.54;
+  }
+  .b-16-med-120 {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .b-16-med {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+  .b-16-semi {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  /* Detail Typography */
+  .d-12-reg {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: var(--tracking-tight-1);
+  }
+  .d-12-med {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  /* UI Components */
+  .ai-chat-bubble {
+    background-color: var(--color-bg-2);
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid white;
+  }
+}
