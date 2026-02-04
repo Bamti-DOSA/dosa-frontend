@@ -1,4 +1,6 @@
 import React from "react";
+import { Bookmark, Calendar } from "lucide-react";
+import { useState } from "react";
 
 const StudyCard = ({
   category = "Robotics & Automation",
@@ -6,23 +8,29 @@ const StudyCard = ({
   date = "2026. 02. 03",
   isInProgress = true,
 }) => {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
   return (
-    <div className="bg-[#EBEBEB] flex flex-col w-[280px] h-[320px] px-[8px] pt-[8px] pb-[16px] rounded-[8px]">
+    <div className="bg-white flex flex-col w-[248px] h-[256px] p-[16px] rounded-[8px]">
       {/* 상단 화이트 카드 영역 */}
-      <div className="bg-white rounded-[8px] p-[12px] h-[200px] relative overflow-hidden">
-        <div className="flex justify-between items-end">
-          <span className="text-[18px] font-bold text-black">{category}</span>
-          <img
-            src="../src/assets/icons/icon-bookmark.svg"
-            alt="bookmark"
-            className="w-[24px] h-[24px]"
-          />
+      <div className="h-[151px] relative overflow-hidden">
+        <div className="flex justify-between items-start mb-[16px]">
+          <span className="b-14-semi text-gray-7">{category}</span>
+          <button
+            onClick={() => setIsBookmarked(!isBookmarked)}
+            className="transition-transform active:scale-90"
+          >
+            <Bookmark
+              size={20}
+              /* 활성화 시 main-1(#4B85E2), 비활성화 시 gray-400(#ADB4BC) */
+              color={isBookmarked ? "#4B85E2" : "#ADB4BC"}
+              /* 활성화 시 내부 색상 채우기 */
+              fill={isBookmarked ? "#4B85E2" : "none"}
+              strokeWidth={isBookmarked ? 2.5 : 2}
+              className="transition-colors duration-200"
+            />
+          </button>
         </div>
-
-        <h2 className="text-[32px] font-extrabold text-black mt-[24px] leading-tight">
-          {title}
-        </h2>
-
         {/* 드론 이미지 (이미지 경로를 실제 프로젝트에 맞춰 수정하세요) */}
         <div className="absolute bottom-[-10px] right-[-10px] w-[220px]">
           <img
@@ -31,26 +39,23 @@ const StudyCard = ({
             className="w-full object-contain"
           />
         </div>
+
+        <h2 className="t-24-bold">{title}</h2>
       </div>
 
       {/* 하단 정보 및 버튼 영역 */}
-      <div className="mt-[8px] px-[8px] flex-grow flex flex-col ">
-        <div className="flex flex-row items-center gap-[6px] text-[#666666] ">
-          <img
-            src="../src/assets/icons/icon-calendar.svg"
-            alt="calendar"
-            className="w-[12px] h-[12px]"
-          />
+      <div className="mt-[8px] flex-grow flex flex-col gap-[16px] ">
+        <div className="flex flex-row items-center justify-start gap-[6px] text-gray-6 ">
+          <Calendar color="#888E96" size={12} />
           <span className="text-[12px] font-medium">{date}</span>
         </div>
-        <div className="flex-grow" />
         <button
           className={
-            "text-white py-[8px] w-full rounded-[8px] text-[16px] font-bold transition-colors " +
+            "text-white py-[8px] px-[10px] w-full rounded-[8px] b-16-semi transition-colors " +
             " " +
             (isInProgress
-              ? " bg-[#DB7670] hover:bg-[#c9655f]"
-              : " bg-[#999999] hover:bg-[#888888]")
+              ? " bg-acc-red-light hover:bg-acc-red cursor-pointer"
+              : " bg-gray-7 hover:bg-gray-8 cursor-pointer")
           }
         >
           {isInProgress ? "학습 이어하기" : "학습 시작하기"}
