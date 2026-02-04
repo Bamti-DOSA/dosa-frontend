@@ -1,5 +1,6 @@
 import SideBar from "./SideBar";
 import StudyCard from "./StudyCard";
+import { ArrowRight } from "lucide-react";
 
 const StudySection = ({ type }) => {
   return (
@@ -7,9 +8,9 @@ const StudySection = ({ type }) => {
       <div className="flex flex-row justify-between">
         <div alt="제목" className="flex flex-col gap-[16px]">
           <div className="text-[24px] font-semibold w-[150px]">{type}</div>
-          <div className="gap-[8px] flex flex-row text-[#5A5A5A] font-semibold">
+          <div className="gap-[8px] flex flex-row text-gray-7 font-semibold">
             전체보기
-            <img src="../src/assets/icons/icon-arrow-right.svg" />
+            <ArrowRight color="#5A5A5A" />
           </div>
         </div>
         <div
