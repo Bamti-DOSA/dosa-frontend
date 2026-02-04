@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @theme {
+  --font-pretendard: "Pretendard Variable", "Pretendard", sans-serif;
+
   /* --- Brand Main Colors --- */
   --color-main-1: #4981ad; /* 메인 블루 */
   --color-main-2: #6e808e; /* 서브 그레이 블루 */
@@ -47,89 +49,67 @@
   }
 }
 
+@layer base {
+  body {
+    font-family: var(--font-pretendard);
+  }
+}
+
 /* --- 커스텀 컴포넌트 스타일 (v4 방식) --- */
 @layer components {
   /* Title Typography */
   .t-18-semi {
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1.2;
+    @apply text-[18px] font-semibold leading-[1.2];
   }
   .t-18-bold {
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1.2;
+    @apply text-[18px] font-bold leading-[1.2];
   }
   .t-20-semi {
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1.2;
+    @apply text-[20px] font-semibold leading-[1.2];
   }
   .t-20-bold {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.2;
+    @apply text-[20px] font-bold leading-[1.2];
+  }
+  .t-24-semi {
+    @apply text-[24px] font-semibold leading-[1.2];
   }
 
-  /* Body Typography */
+  /* --- Body Typography --- */
   .b-14-reg-160 {
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 1.6;
-    letter-spacing: var(--tracking-tight-2);
+    @apply text-[14px] font-normal leading-[1.6] tracking-[var(--tracking-tight-2)];
   }
   .b-14-med {
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.2;
+    @apply text-[14px] font-medium leading-[1.2];
   }
   .b-14-semi {
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.2;
+    @apply text-[14px] font-semibold leading-[1.2];
   }
   .b-14-bold {
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-  .b-16-reg-154 {
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 1.54;
-  }
-  .b-16-med-120 {
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 1.2;
-  }
-  .b-16-med {
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 1.6;
-  }
-  .b-16-semi {
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.2;
-  }
-  .b-16-bold {
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1.2;
+    @apply text-[14px] font-bold leading-[1.2];
   }
 
-  /* Detail Typography */
+  .b-16-reg-154 {
+    @apply text-[16px] font-normal leading-[1.54];
+  }
+  .b-16-med-120 {
+    @apply text-[16px] font-medium leading-[1.2];
+  }
+  .b-16-med {
+    @apply text-[16px] font-medium leading-[1.6];
+  }
+  .b-16-semi {
+    @apply text-[16px] font-semibold leading-[1.2];
+  }
+  .b-16-bold {
+    @apply text-[16px] font-bold leading-[1.2];
+  }
+
+  /* --- Detail Typography --- */
   .d-12-reg {
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.6;
-    letter-spacing: var(--tracking-tight-1);
+    @apply text-[12px] font-normal leading-[1.6] tracking-[var(--tracking-tight-1)];
   }
   .d-12-med {
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.2;
+    @apply text-[12px] font-medium leading-[1.2];
   }
 
   /* UI Components */

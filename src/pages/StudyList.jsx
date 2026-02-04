@@ -7,14 +7,14 @@ const StudyList = () => {
     <>
       <div className="flex flex-row">
         <SideBar />
-        <div className="px-[60px] py-[46px] items-center justify-center w-full">
-          <div alt="제목" className="mt-[46px] t-20-semi ">
+        <div className="px-[60px] py-[46px] items-center justify-center w-full bg-gray-50">
+          <div alt="제목" className="mt-[46px] t-24-semi ">
             학습 페이지
           </div>
           <div alt="진행 중인 학습 목록" className="mt-[110px] mb-[40x] ">
             <div className="flex flex-row justify-between items-center mb-[24px]">
               <div className="t-18-semi">진행 중인 학습</div>
-              <div className="gap-[8px] flex flex-row text-[#5A5A5A] font-semibold">
+              <div className="gap-[8px] flex flex-row text-[#5A5A5A] b-16-semi">
                 전체보기
                 <img src="../src/assets/icons/icon-arrow-right.svg" />
               </div>
