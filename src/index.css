@@ -40,29 +40,28 @@
   /* 가이드의 수치들을 변수화하여 유틸리티로 확장 */
   --tracking-tight-2: -0.02em;
   --tracking-tight-1: -0.01em;
+
+  --background-ai-gradient: linear-gradient(
+    90deg,
+    #4b85e2 0%,
+    #68a2ff 50%,
+    #84ebad 100%
+  );
 }
 
-@utilities {
-  /* AI 전용 선형 그라데이션 */
-  .bg-ai-gradient {
-    background: linear-gradient(90deg, #4b85e2 0%, #68a2ff 50%, #84ebad 100%);
-  }
-   /* 그라데이션 테두리 유틸리티 */
+@layer utilities {
   .border-ai-gradient {
-    position: relative;
-    border: 2px solid transparent; /* 테두리 두께 설정 */
-    background-clip: padding-box;
-    border-radius: inherit; /* 부모의 rounded 값을 따라감 */
-  }
-  .border-ai-gradient::before {
-    content: "";
-    position: absolute;
-    top: -2px; bottom: -2px;
-    left: -2px; right: -2px;
-    z-index: -1;
-    margin: -2px; /* border 두께만큼 음수 마진 */
-    border-radius: inherit;
-    background: linear-gradient(90deg, #4b85e2 0%, #68a2ff 50%, #84ebad 100%);
+    /* 테두리 두께와 스타일을 먼저 잡습니다 */
+    @apply border border-solid border-transparent;
+
+    /* 그라데이션 테두리 핵심 로직 */
+    background:
+      linear-gradient(white, white) padding-box,
+      var(--background-ai-gradient) border-box;
+
+    /* 버튼의 경우 배경이 잘리거나 겹치지 않게 보정 */
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
   }
 }
 
@@ -95,6 +94,10 @@
   }
 
   /* --- Body Typography --- */
+  .b-10-semi {
+    @apply text-[10px] font-semibold leading-[1.2];
+  }
+
   .b-14-reg-160 {
     @apply text-[14px] font-normal leading-[1.6] tracking-[var(--tracking-tight-2)];
   }
