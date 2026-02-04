@@ -1,5 +1,6 @@
 import React from "react";
 import { Bookmark, Calendar } from "lucide-react";
+import { useState } from "react";
 
 const StudyCard = ({
   category = "Robotics & Automation",
@@ -7,13 +8,28 @@ const StudyCard = ({
   date = "2026. 02. 03",
   isInProgress = true,
 }) => {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
   return (
     <div className="bg-white flex flex-col w-[248px] h-[256px] p-[16px] rounded-[8px]">
       {/* 상단 화이트 카드 영역 */}
       <div className="h-[151px] relative overflow-hidden">
         <div className="flex justify-between items-start mb-[16px]">
           <span className="b-14-semi text-gray-7">{category}</span>
-          <Bookmark />
+          <button
+            onClick={() => setIsBookmarked(!isBookmarked)}
+            className="transition-transform active:scale-90"
+          >
+            <Bookmark
+              size={20}
+              /* 활성화 시 main-1(#4B85E2), 비활성화 시 gray-400(#ADB4BC) */
+              color={isBookmarked ? "#4B85E2" : "#ADB4BC"}
+              /* 활성화 시 내부 색상 채우기 */
+              fill={isBookmarked ? "#4B85E2" : "none"}
+              strokeWidth={isBookmarked ? 2.5 : 2}
+              className="transition-colors duration-200"
+            />
+          </button>
         </div>
         {/* 드론 이미지 (이미지 경로를 실제 프로젝트에 맞춰 수정하세요) */}
         <div className="absolute bottom-[-10px] right-[-10px] w-[220px]">

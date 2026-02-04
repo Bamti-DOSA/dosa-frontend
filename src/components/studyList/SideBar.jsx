@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Home,
   BookOpen,
@@ -13,6 +13,9 @@ import {
 
 const SideBar = () => {
   const [activeMenu, setActiveMenu] = useState("진행 중인 학습");
+  useEffect(() => {
+    setActiveMenu("홈");
+  }, []);
 
   const navGroups = [
     {
