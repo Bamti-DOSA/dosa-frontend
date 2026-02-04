@@ -44,19 +44,18 @@ const StudyCard = ({
       </div>
 
       {/* 하단 정보 및 버튼 영역 */}
-      <div className="mt-[8px] px-[8px] flex-grow flex flex-col ">
+      <div className="mt-[8px] flex-grow flex flex-col gap-[16px] ">
         <div className="flex flex-row items-center justify-start gap-[6px] text-gray-6 ">
           <Calendar color="#888E96" size={12} />
           <span className="text-[12px] font-medium">{date}</span>
         </div>
-        <div className="flex-grow" />
         <button
           className={
-            "text-white py-[8px] w-full rounded-[8px] text-[16px] font-bold transition-colors " +
+            "text-white py-[8px] px-[10px] w-full rounded-[8px] b-16-semi transition-colors " +
             " " +
             (isInProgress
-              ? " bg-acc-red-light hover:bg-acc-red"
-              : " bg-gray-7 hover:bg-gray-8")
+              ? " bg-acc-red-light hover:bg-acc-red cursor-pointer"
+              : " bg-gray-7 hover:bg-gray-8 cursor-pointer")
           }
         >
           {isInProgress ? "학습 이어하기" : "학습 시작하기"}
