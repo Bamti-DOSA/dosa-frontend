@@ -11,9 +11,25 @@ const PartItem = ({ part, isSelected, onClick }) => {
   return (
     <button
       onClick={() => onClick(part.id)}
-      className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all bg-white/50 ${
-        isSelected ? "border-blue-500 scale-105" : "border-transparent"
-      }`}
+      style={{
+        width: "97px", // 피그마 수치 반영
+        height: "97px", // 피그마 수치 반영
+        borderRadius: "8px", // 피그마 수치 반영
+        borderWidth: "0.92px", // 피그마 수치 반영
+        opacity: 1, // 피그마 수치 반영
+        transform: "rotate(0deg)", // angle: 0 deg 반영
+      }}
+      className={`
+        flex-shrink-0           /* 크기 고정 */
+        overflow-hidden 
+        transition-all 
+        flex items-center justify-center
+        ${
+          isSelected
+            ? "border-blue-500 bg-white shadow-md"
+            : "border-gray-200 bg-white/50"
+        }
+      `}
     >
       <div className="w-full h-full">
         {/* 작은 3D 렌더링 영역 */}
