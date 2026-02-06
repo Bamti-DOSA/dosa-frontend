@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, MessageSquarePlus, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import Edit from '../../../assets/icons/icon-edit.svg';
 
 const AiMenu = ({ chatSessions = [], onClose, onSelectChat, onNewChat }) => {
   const [openGroups, setOpenGroups] = useState({}); 
@@ -38,53 +38,27 @@ const AiMenu = ({ chatSessions = [], onClose, onSelectChat, onNewChat }) => {
 
   return (
     <>
+      {/* 배경 오버레이 (클릭 시 닫기) */}
       <div 
         onClick={onClose}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'transparent',
-          zIndex: 9990,
-          cursor: 'default'
-        }}
+        className="absolute inset-0 bg-transparent z-[9990] cursor-default"
       />
 
-      <div 
-        className="custom-scrollbar"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          width: '260px',
-          backgroundColor: '#ffffff',
-          boxShadow: '4px 0 24px rgba(0, 0, 0, 0.08)',
-          zIndex: 9999,
-          overflowY: 'auto',
-          borderRight: '1px solid #f3f4f6',
-          animation: 'slideInLeft 0.3s ease-out forwards' 
-        }}
-      >
-        <style>
-          {`
-            @keyframes slideInLeft {
-              from { transform: translateX(-100%); opacity: 0; }
-              to { transform: translateX(0); opacity: 1; }
-            }
-          `}
-        </style>
-
+      {/* 사이드 메뉴 패널 */}
+      {/* custom-scrollbar는 index.css에 정의되어 있다고 가정 */}
+      <div className="absolute top-0 left-0 bottom-0 w-[260px] bg-[#F6F8F9] shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-[9999] overflow-y-auto border-r border-gray-100 animate-slide-in-left custom-scrollbar">
+        
         <div className="p-5">
-          {/* 👇 [수정됨] 디자인 제거: 텍스트 형태로 변경 */}
+          {/* 새로운 대화 시작 버튼 */}
           <div className="mb-6">
             <button 
                 onClick={() => {
                     onNewChat(); 
                     onClose();   
                 }}
-                className="text-sm text-gray-500 font-medium hover:text-blue-600 transition-colors flex items-center gap-2"
+                className="text-sm text-gray-500 font-medium hover:text-gray-900 transition-colors flex items-center gap-2"
             >
-                <MessageSquarePlus size={18} strokeWidth={2.5} /> 
+                <img src={Edit} alt="edit icon" className="w-4 h-4" /> 
                 새로운 대화 시작
             </button>
           </div>
@@ -121,7 +95,6 @@ const AiMenu = ({ chatSessions = [], onClose, onSelectChat, onNewChat }) => {
                           }} 
                           className="w-full text-left px-3 py-3 text-sm text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all truncate font-medium flex items-center gap-3"
                         >
-                          <MessageSquare size={16} className="text-gray-400 shrink-0" />
                           <span className="truncate">{chat.title || "새로운 대화"}</span>
                         </button>
                       ))}

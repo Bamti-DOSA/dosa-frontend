@@ -111,7 +111,7 @@ const PartDetail = ({ selectedPart }) => {
       {/* 1. 왼쪽 카드: 이름 & 설명 */}
       <div
         style={{ width: `${leftWidth}%` }}
-        className="bg-white/95 backdrop-blur-md rounded-2xl p-7 border border-white/40 flex flex-col overflow-hidden shadow-none"
+        className="bg-bg-2 backdrop-blur-md rounded-2xl p-7 border border-white/40 flex flex-col overflow-hidden shadow-none"
       >
         <div className="sticky top-0 z-10 bg-white/5 pb-4">
           <h2 className="text-xl font-bold text-gray-700">
@@ -149,7 +149,7 @@ const PartDetail = ({ selectedPart }) => {
       {/* 3. 오른쪽 카드: 재질 선택 (드래그 스크롤 적용) */}
       <div
         style={{ width: `${100 - leftWidth}%` }}
-        className="bg-white/95 backdrop-blur-md rounded-2xl p-7 border border-white/40 flex flex-col overflow-hidden"
+        className="bg-bg-2 backdrop-blur-md rounded-2xl p-7 border border-white/40 flex flex-col overflow-hidden"
       >
         <h3 className="text-xl font-bold text-gray-700 mb-1">재질</h3>
         {/* 재질 이름 및 설명 영역 */}

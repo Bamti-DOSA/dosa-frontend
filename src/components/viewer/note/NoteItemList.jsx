@@ -47,8 +47,7 @@ const NoteItemList = ({
     <div className="h-full flex flex-col">
       {/* 리스트 영역 */}
       <div
-        className="flex-1 overflow-y-auto p-5 custom-scrollbar"
-        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-5 no-scrollbar bg-[#FFF]"
       >
         {sortedNotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full pb-20 text-gray-400 b-14-med text-center leading-relaxed animate-fade-in">
@@ -99,7 +98,7 @@ const NoteItemList = ({
       </div>
 
       {/* 하단 입력/버튼 영역 */}
-      <div className="shrink-0 z-30 bg-[#FBFDFF]">
+      <div className="shrink-0 z-30 bg-[#FFF]">
         {isAdding ? (
           <div className="pb-4 pr-4">
             <NoteInput

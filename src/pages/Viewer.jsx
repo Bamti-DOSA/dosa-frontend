@@ -85,21 +85,20 @@ const Viewer = () => {
 
   // --- 팝업 확대 핸들러 (내용 이관) ---
   const handleMaximizeAiNote = () => {
-    setShowAiNote(false); // 팝업 닫기
-    setIsCollapsed(false); // 패널 열기
-    setRightPanelWidth(DEFAULT_WIDTH_PERCENT);
-    setActiveTab('ai'); // AI 탭으로 이동
+    setShowAiNote(false);          // 1. 팝업 닫기
+    setIsCollapsed(false);         // 2. 패널 열기
+    setRightPanelWidth(30);        // 3. 패널 너비 복구
+    setActiveTab('ai');            // 4. AI 탭으로 이동
 
-    // 대화 내용이 있다면 새 채팅으로 등록
     if (floatingMessages.length > 0) {
         const newChatSession = {
             id: Date.now().toString(),
             date: 'Just now', 
-            title: floatingMessages[0].text.slice(0, 15) + (floatingMessages[0].text.length > 15 ? "..." : ""),
+            title: floatingMessages[0].content.slice(0, 15) + "...", // content 필드명 확인 필요
             messages: floatingMessages 
         };
         setAiChats(prev => [newChatSession, ...prev]);
-        setFloatingMessages([]); // 초기화
+        setFloatingMessages([]); 
     }
   };
 
@@ -116,17 +115,7 @@ const Viewer = () => {
   ];
 
   return (
-    <div className="w-screen h-screen bg-[#E2E3E7] flex flex-col overflow-hidden font-sans select-none">
-      
-      {/* 팝업 */}
-      {showAiNote && (
-        <AiNote 
-            onClose={() => setShowAiNote(false)} 
-            onMaximize={handleMaximizeAiNote} 
-            messages={floatingMessages}       
-            setMessages={setFloatingMessages} 
-        />
-      )}
+    <div className="w-screen h-screen bg-bg-1 flex flex-col overflow-hidden font-sans select-none">
 
       {/* 헤더 */}
       <header className="h-16 shrink-0 flex items-center justify-between px-6 z-10">
@@ -135,7 +124,7 @@ const Viewer = () => {
             <Menu className="text-gray-700" size={24} strokeWidth={2.5} />
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#E2E3E7] rounded-lg shadow-sm"></div>
+            <div className="w-8 h-8 bg-gray-5 rounded-lg"></div>
             <span className="text-xl font-extrabold text-gray-800 tracking-tight">Robot Gripper</span>
           </div>
         </div>
@@ -149,12 +138,19 @@ const Viewer = () => {
       <main className="flex-1 px-6 pb-6 min-h-0">
         <div 
             ref={containerRef}
-            className="w-full h-full flex bg-[#E2E3E7] relative gap-4"
+            className="w-full h-full flex bg-bg-1 relative gap-4"
         >
           
           {/* 1. Left Container */}
           <div className="flex-1 h-full min-w-0 transition-all duration-300 ease-out">
-             <LeftContainer partsData={partsData} />
+             <LeftContainer 
+                partsData={partsData}
+                showAiNote={showAiNote}
+                setShowAiNote={setShowAiNote}
+                onMaximize={handleMaximizeAiNote} // 핵심: 부모의 함수 전달
+                floatingMessages={floatingMessages}
+                setFloatingMessages={setFloatingMessages}
+             />
           </div>
 
           {/* 2. Right Container */}
