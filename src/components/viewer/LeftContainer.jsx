@@ -1,6 +1,8 @@
 import React, { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stage, useGLTF } from "@react-three/drei";
+import { Sparkles } from "lucide-react";
+import AiNote from './ai/AiNote';
 
 import PartDetail from "../part/PartDetail";
 import PartList from "../part/PartList";
@@ -11,14 +13,29 @@ function SinglePartModel({ modelPath }) {
   return <primitive object={scene.clone()} />;
 }
 
-const LeftContainer = ({ partsData }) => {
+const LeftContainer = ({ 
+  partsData, 
+  showAiNote, 
+  setShowAiNote, 
+  onMaximize, 
+  floatingMessages, 
+  setFloatingMessages 
+}) => {
   const [selectedId, setSelectedId] = useState(partsData[0].id);
   const [showBriefing, setShowBriefing] = useState(true);
 
   const currentPart = partsData.find((p) => p.id === selectedId);
 
   return (
-    <div className="bg-[#EEEFF0] rounded-lg w-full h-full flex flex-col p-6 relative">
+    <div className="bg-[#FFF] rounded-lg w-full h-full flex flex-col p-6 relative">
+      {showAiNote && (
+        <AiNote 
+            onClose={() => setShowAiNote(false)} 
+            onMaximize={onMaximize} // 부모(Viewer)의 탭 전환 함수 실행
+            messages={floatingMessages}       
+            setMessages={setFloatingMessages} 
+        />
+      )}
       
       <div className="flex flex-1 gap-6 min-h-0">
         {/* 1. 부품 리스트 */}
@@ -31,7 +48,7 @@ const LeftContainer = ({ partsData }) => {
         </div>
 
         {/* 2. 3D 캔버스 영역 */}
-        <div className="flex-1 bg-[#EEEFF0] rounded-2xl relative overflow-hidden">
+        <div className="flex-1 bg-[#FFF] rounded-2xl relative overflow-hidden">
           
           {showBriefing && (
             <AiBriefing 
@@ -51,10 +68,7 @@ const LeftContainer = ({ partsData }) => {
         </div>
       </div>
 
-      {/* 3. 하단 설명 카드 */}
-      <div className="mt-6 shrink-0">
-        <PartDetail selectedPart={currentPart} />
-      </div>
+      <PartDetail selectedPart={currentPart} />
     </div>
   );
 };

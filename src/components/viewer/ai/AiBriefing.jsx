@@ -4,9 +4,7 @@ import { X, Sparkles } from 'lucide-react';
 // 👇 className prop 추가
 const AiBriefing = ({ onClose, className = '' }) => {
   return (
-    // 👇 외부에서 받은 className을 뒤에 붙여서 위치를 덮어쓸 수 있게 함
-    // (기존의 absolute, top, left 제거함)
-    <div className={`w-[320px] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-blue-100 p-5 animate-fade-in-down ${className}`}>
+    <div className={`w-[320px] backdrop-blur-md rounded-2xl shadow-xl border border-ai-gradient p-5  ${className}`} style={{ backgroundColor: 'rgba(237, 242, 246, 0.85)' }}>
       
       {/* 헤더 */}
       <div className="flex justify-between items-start mb-3">
@@ -25,7 +23,7 @@ const AiBriefing = ({ onClose, className = '' }) => {
       <p className="text-[11px] text-gray-400 font-medium mb-4 ml-1">2026. 02. 03 학습 기준</p>
       
       {/* 본문 (스크롤 영역) mock데이터 입니다아앙아아*/}
-      <div className="text-xs text-gray-600 space-y-4 leading-relaxed max-h-[260px] overflow-y-auto custom-scrollbar pr-2">
+      <div className="text-xs text-gray-600 space-y-4 leading-relaxed max-h-[260px] overflow-y-auto thin-scrollbar pr-2">
         <p>
           사용자님은 지난 학습 때 <span className="font-bold text-blue-600 bg-blue-50 px-1 rounded">Impellar Blade, Leg, Arm gear</span>에 대하여 학습하셨습니다.
         </p>

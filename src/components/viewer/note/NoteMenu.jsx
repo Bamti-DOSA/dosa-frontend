@@ -17,7 +17,7 @@ const NoteMenu = ({ groupedNotes = {}, onClose, onNoteClick }) => {
 
       {/* 2. 사이드바 메뉴 본체 */}
       <div 
-        className="absolute top-0 left-0 bottom-0 w-[260px] bg-white z-[9999] overflow-y-auto border-r border-gray-100 custom-scrollbar shadow-[4px_0_24px_rgba(0,0,0,0.08)] animate-slideInLeft"
+        className="absolute top-0 left-0 bottom-0 w-[260px] bg-[#F6F8F9] z-[9999] overflow-y-auto border-r border-gray-100 custom-scrollbar shadow-[4px_0_24px_rgba(0,0,0,0.08)] animate-slideInLeft"
       >
         <div className="p-5">
           {/* 기존 메모장 이동 링크 */}
@@ -61,12 +61,12 @@ const NoteMenu = ({ groupedNotes = {}, onClose, onNoteClick }) => {
 
                   {/* 하위 노트 리스트 */}
                   {isOpen && (
-                    <div className="ml-2 pl-2 border-l-2 border-gray-100 mt-1 mb-3 space-y-1">
+                    <div className="ml-2 pl-2mt-1 mb-3 space-y-1">
                       {items.map((note) => (
                         <button 
                           key={note.id} 
                           onClick={() => onNoteClick(note.id)} 
-                          className="w-full text-left px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-all truncate font-medium"
+                          className="w-full text-left px-3 py-2.5 text-sm text-[#434343] hover:bg-[#E2E3E7] rounded-lg transition-all truncate font-medium"
                         >
                           {note.title || "제목 없음"}
                         </button>

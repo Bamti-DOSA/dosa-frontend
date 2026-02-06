@@ -91,7 +91,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
   const otherAttachments = attachments.filter(item => item.type !== 'image');
 
   return (
-    <div className="mt-6 ml-4 animate-fade-in-up">
+    <div className="bg-[#FFF] mt-6 ml-4 animate-fade-in-up">
       <div className="bg-[#F0F2F5] rounded-[20px] p-4 relative">
         
         {/* 히든 인풋 */}
@@ -127,7 +127,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
           autoFocus
         />
 
-        <div className="h-[1px] w-full bg-gray-300 mb-3 opacity-50"></div>
+        <div className="h-[1px] w-full bg-white mb-3 opacity-50"></div>
 
         {/* 사진 미리보기 영역 (본문 위) */}
         {imageAttachments.length > 0 && (
@@ -162,7 +162,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
         {otherAttachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3 mt-1">
                 {otherAttachments.map(item => (
-                    <div key={item.id} className="flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-md text-[10px] text-gray-600">
+                    <div key={item.id} className="flex items-center gap-1 bg-white px-2 py-1 rounded-md text-[10px] text-gray-600">
                         <span>{item.type === 'link' ? '🔗' : '📁'}</span>
                         <span className="max-w-[100px] truncate">{item.name}</span>
                         <button onClick={() => removeAttachment(item.id)} className="hover:text-red-500 ml-1"><X size={12} /></button>
@@ -278,7 +278,7 @@ const NoteInput = ({ onSave, onCancel, initialData = null, onOpenAiNote, isAiNot
          </div>
       </div>
       
-      <div className="text-right mt-2 mr-2">
+      <div className="bg-white text-right mt-2 mr-2">
          <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600 underline">취소</button>
       </div>
     </div>
