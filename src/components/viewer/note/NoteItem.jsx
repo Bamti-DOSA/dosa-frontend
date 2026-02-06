@@ -15,6 +15,9 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const imageAttachments = note.attachments?.filter(item => item.type === 'image') || [];
+  const firstImage = imageAttachments[0];
+
   return (
     <div 
       id={note.id} 
@@ -24,7 +27,7 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
       
       {/* 타임라인 점 */}
       {isFirst && (
-        <div className="absolute left-0 top-0 mt-1 w-4 h-4 rounded-full bg-[#E5E7EB] border-2 border-white z-10"></div>
+        <div className="absolute left-0 top-0 mt-1 w-[26px] h-[26px] rounded-full bg-main-1 z-10"></div>
       )}
       
       {/* 노트 카드 본문 */}
@@ -35,7 +38,7 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
             : 'bg-bg-2 hover:border-gray-300' 
         }`}
       >
-        <div className="flex justify-between items-start mb-1">
+        <div className="flex justify-between items-center">
           <span className="text-[12px] text-[#818181] font-medium tracking-tight">{note.date}</span>
           
           <div className="relative" ref={menuRef}>
@@ -69,31 +72,46 @@ const NoteItem = ({ note, isFirst, onDelete, onEdit, isEditing, onDoubleClick })
         </div>
         
         {note.title && (
-            <h3 className="text-[18px] font-bold text-gray-900 pb-3">{note.title}</h3>
+            <h3 className="t-18-semi font-bold text-gray-900 pb-3">{note.title}</h3>
         )}
         
         <p className="text-[16px] text-[#676767] leading-relaxed mb-4 break-words line-clamp-2 whitespace-pre-wrap">
           {note.content}
         </p>
         
-        <div className="flex gap-1.5">
-          {note.category && (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-main-2 text-[#FFFFFF]">
-              {note.category}
-            </span>
-          )}
+        <div className="flex justify-between items-center mt-2">
+  
+          {/* 1. 왼쪽 그룹 (카테고리 + 종류) */}
+          {/* gap-2: 태그 사이 간격 자동 조절 */}
+          <div className="flex items-center gap-2">
+            {note.category && (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-main-2 text-[#FFFFFF] whitespace-nowrap">
+                {note.category}
+              </span>
+            )}
 
-          {note.type && (
-            <span 
-              className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                note.type === 'important' 
-                  ? 'bg-[#FF9191] text-white' 
-                  : 'bg-[#68A2FF] text-white' 
-              }`}
-            >
-              {note.type === 'important' ? '중요' : '일반'}
-            </span>
-          )}
+            {note.type && (
+              <span 
+                className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${
+                  note.type === 'important' 
+                    ? 'bg-[#FF9191] text-white' 
+                    : 'bg-[#68A2FF] text-white' 
+                }`}
+              >
+                {note.type === 'important' ? '중요' : '일반'}
+              </span>
+            )}
+          </div>
+
+          {/* 2. 오른쪽 그룹 (이미지 첨부 표시) */}
+          <div>
+            {firstImage && (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-300 text-white whitespace-nowrap">
+                이미지 첨부됨
+              </span>
+            )}
+          </div>
+          
         </div>
       </div>
     </div>

@@ -97,6 +97,7 @@ const RightContainer = ({
         content: noteData.content,
         category: noteData.category,
         type: noteData.type,
+        attachments: noteData.attachments || []
       };
       setNotes([...notes, newNote]);
     }
