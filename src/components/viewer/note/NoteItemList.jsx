@@ -57,7 +57,7 @@ const NoteItemList = ({
           </div>
         ) : (
           <div className="relative pb-20">
-            <div className="absolute left-[7px] top-2 bottom-20 w-[2px] bg-[#E5E7EB]"></div>
+            <div className="absolute left-[12px] top-2 bottom-20 w-[2px] bg-main-1"></div>
             <div className="flex flex-col">
               {sortedNotes.map((note, index) => {
                 let showDot = false;
