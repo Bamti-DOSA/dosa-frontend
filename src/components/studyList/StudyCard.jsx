@@ -2,12 +2,7 @@ import React from "react";
 import { Bookmark, Calendar } from "lucide-react";
 import { useState } from "react";
 
-const StudyCard = ({
-  category = "Robotics & Automation",
-  title = "Drone",
-  date = "2026. 02. 03",
-  isInProgress = true,
-}) => {
+const StudyCard = ({ category, title, date, isInProgress = true, imgUrl }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   return (
@@ -33,11 +28,7 @@ const StudyCard = ({
         </div>
         {/* 드론 이미지 (이미지 경로를 실제 프로젝트에 맞춰 수정하세요) */}
         <div className="absolute bottom-[-10px] right-[-10px] w-[220px]">
-          <img
-            src="../src/assets/images/drone.png"
-            alt="Drone"
-            className="w-full object-contain"
-          />
+          <img src={imgUrl} alt={title} className="w-full object-contain" />
         </div>
 
         <h2 className="t-24-bold">{title}</h2>
