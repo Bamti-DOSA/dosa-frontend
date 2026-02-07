@@ -64,7 +64,7 @@ const AssistantAi = () => {
 
   return (
     // 전체 레이아웃 구조 (h-full로 꽉 차게 설정하여 스크롤 문제 해결)
-    <div className="flex flex-col h-full bg-[#FBFDFF] relative">
+    <div className="flex flex-col h-full bg-[#FFF] relative">
       {/* 2. 채팅 본문 영역 (위쪽 UI 말풍선 스타일 + 아래쪽 기능인 scrollRef) */}
       <div
         className="flex-1 overflow-y-auto custom-scrollbar px-2"

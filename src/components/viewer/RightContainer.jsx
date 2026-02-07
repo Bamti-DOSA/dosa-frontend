@@ -210,11 +210,11 @@ const RightContainer = ({
       )}
 
       {/* 헤더 */}
-      <div className="bg-white p-4 flex justify-between items-center z-40 shrink-0 relative">
+      <div className="bg-[#FFF] p-4 flex justify-between items-center z-40 shrink-0 relative">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`p-1 rounded-[8px] transition-colors ${isMenuOpen ? "bg-bg-1 text-main-1" : "text-gray-89 hover:bg-gray-2"}`}
+            className={`cursor-pointer p-1 rounded-[8px] transition-colors ${isMenuOpen ? "bg-bg-1 text-main-1" : "text-gray-89 hover:bg-gray-2"}`}
           >
             <Menu size={24} strokeWidth={2.5} />
           </button>
@@ -228,7 +228,7 @@ const RightContainer = ({
               setActiveTab("note");
               setIsMenuOpen(false);
             }}
-            className={`flex items-center gap-1 px-[8px] py-[6px] b-14-semi rounded transition-all ${activeTab === "note" ? "bg-white text-gray-9" : "bg-transparent text-gray-5"}`}
+            className={`cursor-pointer flex items-center gap-1 px-[8px] py-[6px] b-14-semi rounded transition-all ${activeTab === "note" ? "bg-white text-gray-9" : "bg-transparent text-gray-5"}`}
           >
             <File
               size={12}
@@ -241,7 +241,7 @@ const RightContainer = ({
               setActiveTab("ai");
               setIsMenuOpen(false);
             }}
-            className={`flex items-center justifu-center gap-1 px-[8px] py-[6px] rounded b-14-semi transition-all ${activeTab === "ai" ? "bg-white text-gray-9" : "bg-transparent text-gray-5"}`}
+            className={`cursor-pointer flex items-center justifu-center gap-1 px-[8px] py-[6px] rounded b-14-semi transition-all ${activeTab === "ai" ? "bg-white text-gray-9" : "bg-transparent text-gray-5"}`}
           >
             <MessageSquare size={12} /> AI
           </button>

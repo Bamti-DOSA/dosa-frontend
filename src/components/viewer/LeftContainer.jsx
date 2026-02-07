@@ -1,39 +1,91 @@
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stage, useGLTF } from "@react-three/drei";
-import { Sparkles } from "lucide-react";
 import AiNote from './ai/AiNote';
-
 import PartDetail from "../part/PartDetail";
 import PartList from "../part/PartList";
-import AiBriefing from "./ai/AiBriefing"; 
+import AiBriefing from "./ai/AiBriefing";
+import AnimationPlayer from "./AnimationPlayer";
+import AnimationSlider from "./AnimationSlider";
+import { mapModelData } from "../../utils/modelMapper";
 
 function SinglePartModel({ modelPath }) {
-  const { scene } = useGLTF(modelPath);
-  return <primitive object={scene.clone()} />;
+  if (!modelPath) return null;
+  
+  try {
+    const { scene } = useGLTF(modelPath);
+    return <primitive object={scene.clone()} />;
+  } catch (error) {
+    console.error('❌ GLTFLoader error:', error);
+    return null;
+  }
 }
 
 const LeftContainer = ({ 
-  partsData, 
+  apiData,
   showAiNote, 
   setShowAiNote, 
   onMaximize, 
   floatingMessages, 
   setFloatingMessages 
 }) => {
-  const [selectedId, setSelectedId] = useState(partsData[0].id);
+  const [transformedParts, setTransformedParts] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [showBriefing, setShowBriefing] = useState(true);
+  const [showAssembly, setShowAssembly] = useState(true);
+  
+  // 👇 애니메이션 상태 - isPlaying 제거
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [totalFrames] = useState(100);
 
-  const currentPart = partsData.find((p) => p.id === selectedId);
+  // async 데이터 변환
+  useEffect(() => {
+    const loadParts = async () => {
+      const mapped = await mapModelData(apiData);
+      setTransformedParts(mapped);
+      
+      if (mapped.length > 0 && !selectedId) {
+        setSelectedId(mapped[0].id);
+      }
+    };
+    
+    if (apiData) {
+      loadParts();
+    }
+  }, [apiData]);
+
+  const currentPart = transformedParts.find((p) => p.id === selectedId);
+  const assemblyPart = transformedParts.find((p) => p.isAssembly);
+
+  // 👇 리셋만 남김
+  const handleReset = () => {
+    setCurrentFrame(0);
+  };
+
+  // 👇 슬라이더 변경
+  const handleFrameChange = (frame) => {
+    setCurrentFrame(frame);
+  };
+
+  const handlePartSelect = (partId) => {
+    setSelectedId(partId);
+    const part = transformedParts.find(p => p.id === partId);
+    
+    if (part?.isAssembly) {
+      setShowAssembly(true);
+    } else {
+      setShowAssembly(true);
+    }
+  };
 
   return (
-    <div className="bg-[#FFF] rounded-lg w-full h-full flex flex-col p-6 relative">
+    <div className="bg-white rounded-lg w-full h-full flex flex-col p-6 relative">
       {showAiNote && (
         <AiNote 
-            onClose={() => setShowAiNote(false)} 
-            onMaximize={onMaximize} // 부모(Viewer)의 탭 전환 함수 실행
-            messages={floatingMessages}       
-            setMessages={setFloatingMessages} 
+          onClose={() => setShowAiNote(false)} 
+          onMaximize={onMaximize}
+          messages={floatingMessages}       
+          setMessages={setFloatingMessages} 
         />
       )}
       
@@ -41,15 +93,14 @@ const LeftContainer = ({
         {/* 1. 부품 리스트 */}
         <div className="h-full overflow-y-auto custom-scrollbar shrink-0 p-1">
           <PartList
-            parts={partsData}
+            parts={transformedParts}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handlePartSelect}
           />
         </div>
 
         {/* 2. 3D 캔버스 영역 */}
-        <div className="flex-1 bg-[#FFF] rounded-2xl relative overflow-hidden">
-          
+        <div className="flex-1 bg-white rounded-2xl relative overflow-hidden">
           {showBriefing && (
             <AiBriefing 
               className="absolute left-28 z-50" 
@@ -57,14 +108,45 @@ const LeftContainer = ({
             />
           )}
 
-          <Canvas shadows camera={{ position: [4, 0, 4], fov: 50 }}>
-            <Suspense fallback={null}>
-              <Stage environment="city" intensity={0.6} contactShadow={false}>
-                <SinglePartModel modelPath={currentPart ? currentPart.model : ""} />
-              </Stage>
-            </Suspense>
-            <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} />
-          </Canvas>
+          {assemblyPart?.model && showAssembly ? (
+            <>
+              <Canvas shadows camera={{ position: [4, 0, 4], fov: 50 }}>
+                <Suspense fallback={null}>
+                  <Stage environment="city" intensity={0.6} contactShadow={false}>
+                    <AnimationPlayer 
+                      url={assemblyPart.model} 
+                      currentFrame={currentFrame}
+                      totalFrames={totalFrames}
+                      selectedPartMesh={currentPart?.isAssembly ? null : currentPart?.meshName}
+                    />
+                  </Stage>
+                </Suspense>
+                <OrbitControls makeDefault />
+              </Canvas>
+
+              {/* 👇 슬라이더만 남김 */}
+              <AnimationSlider
+                currentFrame={currentFrame}
+                totalFrames={totalFrames}
+                onFrameChange={handleFrameChange}
+                onReset={handleReset}
+                modelUrl={assemblyPart.model}
+              />
+            </>
+          ) : currentPart?.model ? (
+            <Canvas shadows camera={{ position: [4, 0, 4], fov: 50 }}>
+              <Suspense fallback={null}>
+                <Stage environment="city" intensity={0.6} contactShadow={false}>
+                  <SinglePartModel modelPath={currentPart.model} />
+                </Stage>
+              </Suspense>
+              <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} />
+            </Canvas>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              3D 모델을 불러올 수 없습니다.
+            </div>
+          )}
         </div>
       </div>
 

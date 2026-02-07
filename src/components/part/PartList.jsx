@@ -1,6 +1,11 @@
+import React from "react";
 import PartItem from "./PartItem";
 
 const PartList = ({ parts, selectedId, onSelect }) => {
+  if (!parts || parts.length === 0) {
+    return <div className="text-gray-400 text-sm">부품 데이터가 없습니다.</div>;
+  }
+
   return (
     <div
       style={{
@@ -32,10 +37,10 @@ const PartList = ({ parts, selectedId, onSelect }) => {
     >
       {parts.map((part) => (
         <PartItem
-          key={part.id}
+          key={part.id} // 👈 key 추가
           part={part}
           isSelected={selectedId === part.id}
-          onClick={onSelect}
+          onClick={() => onSelect(part.id)}
         />
       ))}
     </div>
