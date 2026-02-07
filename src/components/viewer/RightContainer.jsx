@@ -68,6 +68,25 @@ const RightContainer = ({
 
   const scrollRef = useRef(null);
 
+  const containerRef = useRef(null);
+  const [width, setWidth] = useState(0);
+
+  // 컨테이너의 실제 너비를 감지하는 로직
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setWidth(entry.contentRect.width);
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const isCollapsed = width < 480;
+
   const groupedNotesForMenu = useMemo(() => {
     if (!notes) return {};
     return notes.reduce((acc, note) => {
@@ -97,7 +116,7 @@ const RightContainer = ({
         content: noteData.content,
         category: noteData.category,
         type: noteData.type,
-        attachments: noteData.attachments || []
+        attachments: noteData.attachments || [],
       };
       setNotes([...notes, newNote]);
     }
@@ -156,7 +175,10 @@ const RightContainer = ({
   );
 
   return (
-    <div className="w-full h-full flex flex-col relative bg-[#FBFDFF] rounded-[8px] overflow-hidden">
+    <div
+      ref={containerRef}
+      className="w-full h-full flex flex-col relative bg-bg-2 rounded-[8px] overflow-hidden"
+    >
       {/* 삭제 모달 */}
       {deletingNoteId && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in">
