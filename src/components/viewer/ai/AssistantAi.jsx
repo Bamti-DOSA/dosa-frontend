@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Camera, FolderPlus, Link as LinkIcon, Plus, ArrowUp, Menu, X } from 'lucide-react';
-import IconPaperClip from '../../../assets/icons/icon-paperclip.svg';
+import {
+  Camera,
+  FolderPlus,
+  Link as LinkIcon,
+  Plus,
+  ArrowUp,
+  Menu,
+  X,
+} from "lucide-react";
+import IconPaperClip from "../../../assets/icons/icon-paperclip.svg";
 
 const AssistantAi = () => {
   // --- 기능 및 상태 관리 (아래쪽 코드 기반) ---
@@ -57,25 +65,36 @@ const AssistantAi = () => {
   return (
     // 전체 레이아웃 구조 (h-full로 꽉 차게 설정하여 스크롤 문제 해결)
     <div className="flex flex-col h-full bg-[#FBFDFF] relative">
-
       {/* 2. 채팅 본문 영역 (위쪽 UI 말풍선 스타일 + 아래쪽 기능인 scrollRef) */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-2" ref={scrollRef}>
+      <div
+        className="flex-1 overflow-y-auto custom-scrollbar px-2"
+        ref={scrollRef}
+      >
         {messages.map((msg) => (
           <div
             key={msg.id}
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] p-4 mx-[20px] my-[12px] text-sm leading-relaxed ${
+              className={`max-w-[85%] px-4 py-2 mx-[20px] my-[12px] b-16-med leading-relaxed ${
                 msg.role === "user"
-                  ? "bg-gray-200 text-[#232323] rounded-[8px]" // 위쪽 UI: 둥근 사각형 (반지름 8px)
-                  : "bg-white border border-[#EEEEEE] text-[#232323] rounded-[8px]"
+                  ? "bg-bg-2 text-gray-9 rounded-[8px]" // 위쪽 UI: 둥근 사각형 (반지름 8px)
+                  : "bg-white border border-bg-1 border-[1.5px] text-gray-9 rounded-[8px]"
               }`}
             >
               {msg.content}
               {msg.attachment && (
                 <div className="mt-2 pt-2 border-t border-gray-400/20 text-[11px] flex items-center gap-1 opacity-80">
-                   {msg.attachment.type === 'link' ? <img src={IconPaperClip} alt="link icon" className="w-3 h-3" /> : '📁'} {msg.attachment.name}
+                  {msg.attachment.type === "link" ? (
+                    <img
+                      src={IconPaperClip}
+                      alt="link icon"
+                      className="w-3 h-3"
+                    />
+                  ) : (
+                    "📁"
+                  )}{" "}
+                  {msg.attachment.name}
                 </div>
               )}
             </div>
@@ -85,16 +104,20 @@ const AssistantAi = () => {
 
       {/* 3. 입력창 영역 (위쪽 UI 스타일: 하단 마진, 회색 알약 모양 입력바) */}
       <div className="bg-white relative m-[25px] shrink-0">
-        
         {/* 선택된 파일 미리보기 (입력창 위) */}
         {selectedItem && (
-          <div className="absolute bottom-full left-5 mb-2 flex items-center gap-2 bg-gray-800 text-white px-3 py-1.5 rounded-full text-xs animate-in fade-in slide-in-from-bottom-1">
+          <div className="absolute bottom-full left-5 mb-2 flex items-center gap-2 bg-main-2 text-white px-3 py-1.5 rounded-full text-xs animate-in fade-in slide-in-from-bottom-1">
             <span>
-              {selectedItem.type === "link" ? <img src={IconPaperClip} alt="link icon" className="w-3 h-3" /> : '📁'} {selectedItem.name}
+              {selectedItem.type === "link" ? (
+                <img src={IconPaperClip} alt="link icon" className="w-3 h-3" />
+              ) : (
+                "📁"
+              )}{" "}
+              {selectedItem.name}
             </span>
             <button
               onClick={() => setSelectedItem(null)}
-              className="ml-1 hover:text-red-400"
+              className="ml-1 hover:text-black"
             >
               <X size={14} />
             </button>
@@ -151,20 +174,20 @@ const AssistantAi = () => {
           >
             <Plus size={24} className="text-gray-500" />
           </button>
-          
+
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="메시지를 입력하세요..."
-            className="flex-1 bg-transparent outline-none text-sm py-2 text-gray-700"
+            className="flex-1 bg-transparent outline-none b-14-med py-2 text-gray-700"
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
           />
-          
+
           <button
             onClick={handleSendMessage}
             disabled={!inputValue.trim()}
-            className={`p-2 rounded-full text-white transition-colors bg-main-1`}
+            className={`p-2 rounded-full text-white transition-colors bg-main-1 hover:bg-white hover:text-main-1`}
           >
             <ArrowUp size={20} strokeWidth={2.5} />
           </button>
