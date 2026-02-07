@@ -5,7 +5,7 @@ import * as THREE from 'three';
 function AnimationPlayer({ url, currentFrame, totalFrames, selectedPartMesh }) {
   const gltf = useGLTF(url);
   const mixerRef = useRef(null);
-  const actionRef = useRef(null);
+  const actionsRef = useRef([]); // 👈 모든 액션 저장
   const highlightedMeshRef = useRef(null);
   const originalMaterialsRef = useRef(new Map());
   const [availableMeshes, setAvailableMeshes] = useState([]);
@@ -17,14 +17,15 @@ function AnimationPlayer({ url, currentFrame, totalFrames, selectedPartMesh }) {
       return;
     }
 
-    const clip = gltf.animations[0];
+    console.log('🎬 Loading animations:');
+    gltf.animations.forEach((clip, i) => {
+      console.log(`  [${i}] "${clip.name}" - ${clip.duration.toFixed(2)}s - ${clip.tracks.length} tracks`);
+    });
 
-    // 모든 메쉬 이름 수집
+    // 메쉬 수집
     const meshNames = [];
     gltf.scene.traverse((child) => {
-      if (child.isMesh) {
-        meshNames.push(child.name);
-      }
+      if (child.isMesh) meshNames.push(child.name);
     });
     setAvailableMeshes(meshNames);
 
@@ -32,13 +33,24 @@ function AnimationPlayer({ url, currentFrame, totalFrames, selectedPartMesh }) {
     const mixer = new THREE.AnimationMixer(gltf.scene);
     mixerRef.current = mixer;
 
-    const action = mixer.clipAction(clip);
-    actionRef.current = action;
+    // 👇 모든 액션 생성 및 재생
+    const actions = [];
+    
+    gltf.animations.forEach((clip) => {
+      const action = mixer.clipAction(clip);
+      
+      // 기본 설정
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.play();
+      action.paused = true; // 👈 일시정지 상태로 시작
+      action.time = 0;
+      
+      actions.push(action);
+    });
 
-    action.setLoop(THREE.LoopOnce);
-    action.clampWhenFinished = true;
-    action.play();
-    action.paused = true;
+    actionsRef.current = actions;
+    console.log(`✅ ${actions.length} animation(s) ready`);
 
     return () => {
       mixer.stopAllAction();
@@ -46,22 +58,26 @@ function AnimationPlayer({ url, currentFrame, totalFrames, selectedPartMesh }) {
     };
   }, [gltf]);
 
-  // 👇 프레임 변경만 처리 (재생 관련 제거)
+  // 프레임 변경
   useEffect(() => {
-    if (!mixerRef.current || !actionRef.current || !gltf.animations[0]) return;
+    if (!mixerRef.current || actionsRef.current.length === 0) return;
 
-    const clip = gltf.animations[0];
+    // 👇 모든 액션에 동일한 normalized time 적용
     const normalizedTime = Math.max(0, Math.min(1, currentFrame / totalFrames));
-    const targetTime = normalizedTime * clip.duration;
-    const clampedTime = Math.min(targetTime, clip.duration - 0.001);
 
-    actionRef.current.time = clampedTime;
-    actionRef.current.paused = true;
+    actionsRef.current.forEach((action) => {
+      const clip = action.getClip();
+      const targetTime = normalizedTime * clip.duration;
+      const clampedTime = Math.min(targetTime, clip.duration - 0.001);
+
+      action.time = clampedTime;
+      action.paused = true;
+    });
 
     // 강제 업데이트
     mixerRef.current.update(0);
 
-  }, [currentFrame, totalFrames, gltf.animations]);
+  }, [currentFrame, totalFrames]);
 
   // 하이라이트 효과
   useEffect(() => {
@@ -80,7 +96,7 @@ function AnimationPlayer({ url, currentFrame, totalFrames, selectedPartMesh }) {
       if (child.isMesh) meshList.push(child);
     });
 
-    // 매칭 전략들
+    // 매칭 전략
     targetMesh = meshList.find(child => child.name === selectedPartMesh);
 
     if (!targetMesh) {
