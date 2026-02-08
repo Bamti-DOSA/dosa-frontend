@@ -1,5 +1,10 @@
 // src/api/aiAPI.js
-export const fetchAiResponse = async (systemType, userPrompt) => {
+export const fetchAiResponse = async (
+  systemType,
+  userPrompt,
+  modelName,
+  content,
+) => {
   try {
     const baseUrl = import.meta.env.VITE_API_BASE_URL;
     const response = await fetch(`${baseUrl}/api/chat`, {
@@ -11,6 +16,8 @@ export const fetchAiResponse = async (systemType, userPrompt) => {
       body: JSON.stringify({
         system: systemType, // 예: "DRONE", "MACHINE_VICE"
         prompt: userPrompt, // 예: "드론의 기본 구조를 설명해줘"
+        modelName: modelName,
+        message: content,
       }),
     });
 

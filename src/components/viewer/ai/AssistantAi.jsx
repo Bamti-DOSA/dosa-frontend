@@ -81,6 +81,10 @@ const AssistantAi = ({
 
   // 4. 메시지 전송 및 저장
   const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading || !modelName) {
+      console.warn("⚠️ modelName이 아직 준비되지 않았습니다.");
+      return;
+    }
     if (!inputValue.trim() || isLoading) return;
 
     const userText = inputValue;
@@ -197,15 +201,15 @@ const AssistantAi = ({
             <Plus size={24} className="text-gray-500" />
           </button>
           <input
-            type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder={
-              isLoading ? "AI가 생각 중..." : "메시지를 입력하세요..."
-            }
-            className="flex-1 bg-transparent outline-none b-14-med py-2 text-gray-700"
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            disabled={isLoading}
+            // 💡 modelName이 없으면 입력창 비활성화
+            disabled={!modelName || isLoading}
+            placeholder={
+              !modelName ? "모델 정보를 불러오는 중..." : "메시지를 입력하세요."
+            }
+            className="flex-1 p-2 rounded-lg"
           />
           <button
             onClick={handleSendMessage}

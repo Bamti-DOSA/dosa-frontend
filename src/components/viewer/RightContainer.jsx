@@ -68,20 +68,6 @@ const RightContainer = ({
   const [expandedNoteId, setExpandedNoteId] = useState(null);
 
   const [modelName, setModelName] = useState("");
-
-  useEffect(() => {
-    const fetchAndFormatName = async () => {
-      const currentModel = await getModelById(modelId); // 내 아이디 찾기
-
-      if (currentModel) {
-        // "Machine Vice" -> "MACHINE_VICE" 변환
-        const formattedName = formatSystemName(currentModel.name);
-        setModelName(formattedName);
-      }
-    };
-    fetchAndFormatName();
-  }, [modelId]);
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [deletingNoteId, setDeletingNoteId] = useState(null);
 
@@ -221,6 +207,43 @@ const RightContainer = ({
   };
 
   useEffect(() => {
+    const initAiSession = async () => {
+      try {
+        // 1. 💡 먼저 modelId로 모델 상세 정보를 가져와서 시스템용 이름을 설정합니다.
+        const currentModel = await getModelById(modelId); //
+        if (currentModel && currentModel.name) {
+          // "Machine Vice" -> "MACHINE_VICE" 형태로 변환
+          const formattedName = formatSystemName(currentModel.name);
+          setModelName(formattedName);
+          console.log("✅ AI용 모델명 설정 완료:", formattedName);
+        }
+
+        // 2. 세션스토리지 확인 및 세션 초기화 로직 (기존 유지)
+        const isVisited = sessionStorage.getItem("ai_session_active");
+
+        if (!isVisited) {
+          console.log("새로운 브라우저 세션 시작: 새 채팅을 생성합니다.");
+          await handleNewAiChat();
+          sessionStorage.setItem("ai_session_active", "true");
+        } else {
+          console.log("기존 세션 유지: 마지막 대화방을 연결합니다.");
+          const lastId = await getLastChatId();
+          if (lastId > 0) {
+            setCurrentChatId(lastId);
+          } else {
+            await handleNewAiChat();
+          }
+        }
+      } catch (error) {
+        console.error("AI 초기화 중 에러 발생:", error);
+      }
+    };
+
+    if (modelId) {
+      initAiSession();
+    }
+  }, [modelId]);
+  useEffect(() => {
     if (activeTab === "note" && isAdding && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -321,6 +344,7 @@ const RightContainer = ({
               onSelectChat={handleSelectChat}
               onNewChat={handleNewAiChat}
               modelId={modelId}
+              currentChatId={currentChatId}
             />
           ))}
 

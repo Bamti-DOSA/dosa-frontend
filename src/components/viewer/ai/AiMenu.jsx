@@ -3,10 +3,35 @@ import Edit from "../../../assets/icons/icon-edit.svg";
 import { getChatsByModel } from "../../../api/aiDB";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
+const AiMenu = ({
+  modelId,
+  currentChatId,
+  onClose,
+  onSelectChat,
+  onNewChat,
+}) => {
   const [chatSessions, setChatSessions] = useState([]);
-  // 💡 그룹별 개별 상태 관리를 위해 객체({})로 초기화합니다.
   const [openGroups, setOpenGroups] = useState({});
+
+  const getGroupName = (chatDate) => {
+    const today = new Date();
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const todayStr = `${today.getDate()}. ${months[today.getMonth()]}`;
+    return chatDate === todayStr ? "최근" : chatDate;
+  };
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -49,7 +74,7 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
         ),
       );
 
-      // 💡 데이터 로드 시 모든 그룹을 기본적으로 펼침 상태로 설정
+      // 초기 로드 시 모든 그룹 펼침
       const initialOpenState = {};
       formattedChats.forEach((chat) => {
         const groupName = getGroupName(chat.date);
@@ -60,27 +85,6 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
 
     loadHistory();
   }, [modelId]);
-
-  // 💡 오늘 날짜인지 판별하여 그룹명을 반환하는 유틸 함수
-  const getGroupName = (chatDate) => {
-    const today = new Date();
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const todayStr = `${today.getDate()}. ${months[today.getMonth()]}`;
-    return chatDate === todayStr ? "최근" : chatDate;
-  };
 
   const groupedChats = useMemo(() => {
     const groups = {};
@@ -98,7 +102,6 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
     return b.localeCompare(a);
   });
 
-  // 💡 특정 그룹의 아이디를 받아 해당 그룹만 토글합니다.
   const handleToggleGroup = (groupName) => {
     setOpenGroups((prev) => ({
       ...prev,
@@ -132,19 +135,17 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
 
           <div className="space-y-4">
             {groupKeys.map((groupName) => {
-              const isOpen = openGroups[groupName]; // 💡 현재 그룹의 오픈 상태 확인
+              const isOpen = openGroups[groupName];
 
               return (
                 <div key={groupName} className="select-none">
-                  {/* 헤더 부분 클릭 시에도 토글되도록 설정 */}
                   <div
-                    className="flex flex-row justify-between items-center cursor-pointer  px-1 transition-colors"
+                    className="flex flex-row justify-between items-center cursor-pointer hover:bg-bg-1 rounded-md px-1 transition-colors"
                     onClick={() => handleToggleGroup(groupName)}
                   >
                     <div className="py-2 mb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
                       {groupName}
                     </div>
-                    {/* 💡 상태에 따라 아이콘 변경 */}
                     {isOpen ? (
                       <ChevronUp size={18} className="text-gray-400" />
                     ) : (
@@ -152,21 +153,30 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
                     )}
                   </div>
 
-                  {/* 💡 isOpen이 true일 때만 목록을 렌더링 */}
                   {isOpen && (
                     <div className="space-y-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                      {groupedChats[groupName].map((chat) => (
-                        <button
-                          key={chat.id}
-                          onClick={() => {
-                            onSelectChat(chat.id);
-                            onClose();
-                          }}
-                          className="w-full text-left p-3 b-16-med-120 text-gray-9 hover:bg-bg-1 rounded-[8px] transition-all truncate"
-                        >
-                          {chat.title}
-                        </button>
-                      ))}
+                      {groupedChats[groupName].map((chat) => {
+                        // 💡 현재 활성화된 채팅방인지 확인
+                        const isSelected = chat.id === currentChatId;
+
+                        return (
+                          <button
+                            key={chat.id}
+                            onClick={() => {
+                              onSelectChat(chat.id);
+                              onClose();
+                            }}
+                            // 💡 선택 여부에 따라 배경색 조건부 렌더링
+                            className={`w-full text-left p-3 b-16-med-120 truncate transition-all rounded-[8px] ${
+                              isSelected
+                                ? "bg-bg-1 text-main-1 font-bold" // 현재 대화방 스타일
+                                : "bg-gray-50 text-gray-9 hover:bg-bg-1" // 일반 스타일
+                            }`}
+                          >
+                            {chat.title}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
