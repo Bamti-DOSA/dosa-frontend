@@ -10,7 +10,7 @@ import {
   createNote, 
   updateNote, 
   deleteNote 
-} from "../../utils/noteStorage";
+} from "../../utils/noteDB";
 
 const parseDate = (dateStr) => {
   const [dayPart, monthStr, timePart] = dateStr.split(" ");
@@ -56,8 +56,8 @@ const RightContainer = ({
     }
   }, [modelId]);
 
-  const loadNotes = () => {
-    const loadedNotes = getNotesByModelId(modelId);
+  const loadNotes = async () => {
+    const loadedNotes = await getNotesByModelId(modelId);
     setNotes(loadedNotes);
   };
 
@@ -84,11 +84,11 @@ const RightContainer = ({
     }, {});
   }, [notes]);
 
-  const handleSaveNote = (noteData) => {
+  const handleSaveNote = async (noteData) => {
     const dateStr = getFormattedDate();
     
     if (editingNote) {
-      const success = updateNote(editingNote.id, {
+      const success = await updateNote(editingNote.id, {
         title: noteData.title || "제목 없음",
         content: noteData.content,
         category: noteData.category,
@@ -97,11 +97,11 @@ const RightContainer = ({
       });
       
       if (success) {
-        loadNotes();
+        await loadNotes();
       }
       setEditingNote(null);
     } else {
-      const newNote = createNote(modelId, {
+      const newNote = await createNote(modelId, {
         title: noteData.title || "제목 없음",
         content: noteData.content,
         category: noteData.category,
@@ -110,7 +110,7 @@ const RightContainer = ({
       });
       
       if (newNote) {
-        loadNotes();
+        await loadNotes();
       }
     }
     
@@ -135,11 +135,11 @@ const RightContainer = ({
     setDeletingNoteId(noteId);
   };
 
-  const handleDeleteConfirm = () => {
-    const success = deleteNote(deletingNoteId);
+  const handleDeleteConfirm = async () => {
+    const success = await deleteNote(deletingNoteId);
     
     if (success) {
-      loadNotes();
+      await loadNotes();
     }
     
     setDeletingNoteId(null);

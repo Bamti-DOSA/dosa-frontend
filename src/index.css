@@ -51,18 +51,22 @@
 
 @layer utilities {
   .border-ai-gradient {
-    /* 테두리 두께와 스타일을 먼저 잡습니다 */
-    @apply border border-solid border-transparent;
+    /* 1. 보더 이미지 대신 투명 테두리 설정 */
+    border: 1.5px solid transparent;
 
-    /* 그라데이션 테두리 핵심 로직 */
-    background:
-      linear-gradient(white, white) padding-box,
-      var(--background-ai-gradient) border-box;
+    /* 2. 배경 레이어 설정 (반드시 단색이 그라데이션보다 앞에 와야 함) */
+    background-image:
+      linear-gradient(rgba(237, 242, 246), rgba(237, 242, 246, 0.85)),
+      var(--background-ai-gradient);
 
-    /* 버튼의 경우 배경이 잘리거나 겹치지 않게 보정 */
+    /* 3. 각 배경 레이어가 그려질 영역 지정 */
     background-origin: border-box;
     background-clip: padding-box, border-box;
+
+    /* 4. 이제 둥근 모서리가 정상 적용됩니다 */
+    @apply rounded-[16px];
   }
+
   .bg-ai-gradient {
     background: var(--background-ai-gradient);
   }

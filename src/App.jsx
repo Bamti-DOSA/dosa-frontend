@@ -1,9 +1,16 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Landing from "./pages/Landing.jsx";
-import StudyList from "./pages/StudyList.jsx";
-import Viewer from "./pages/Viewer.jsx";
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { migrateFromLocalStorage } from './utils/migrateNotes';
+import Landing from './pages/Landing';
+import StudyList from './pages/StudyList';
+import Viewer from './pages/Viewer';
 
 function App() {
+  useEffect(() => {
+    // 앱 시작 시 한 번만 마이그레이션
+    migrateFromLocalStorage();
+  }, []);
+
   return (
     <Router>
       <Routes>
