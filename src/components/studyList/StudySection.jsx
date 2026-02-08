@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import StudyCard from "./StudyCard";
 import { ArrowRight } from "lucide-react";
-import { getChatsByModel } from "../../api/aiDB"; // IndexedDB 접근 함수
+import { getChatsByModel, getMemosByModel } from "../../api/aiDB";
 
 const StudySection = ({ category, models, filterType }) => {
   const [modelsWithStatus, setModelsWithStatus] = useState([]);
@@ -13,19 +13,28 @@ const StudySection = ({ category, models, filterType }) => {
         return;
       }
 
-      // 각 모델별로 IndexedDB를 조회하여 진행 상태 확인
-      const updatedModels = await Promise.all(
-        models.slice(0, 3).map(async (model) => {
-          try {
-            // 해당 모델의 채팅 내역이 있는지 확인
-            const chatHistory = await getChatsByModel(String(model.objectId));
+      // "홈" 탭에서는 상위 3개만, 그 외에는 전체 모델을 대상으로 상태 확인
+      const targetModels = filterType === "홈" ? models.slice(0, 3) : models;
 
-            // 기록이 존재하고 메시지가 1개라도 있으면 '학습 중(IN_PROGRESS)'으로 판단
+      const updatedModels = await Promise.all(
+        targetModels.map(async (model) => {
+          try {
+            const modelIdStr = String(model.objectId); // ✨ ID를 문자열로 통일
+
+            // 1. 해당 모델의 채팅 내역 확인
+            const chatHistory = await getChatsByModel(modelIdStr);
             const hasHistory = chatHistory && chatHistory.length > 0;
+
+            // 2. 해당 모델의 메모 내역 확인
+            const memoHistory = await getMemosByModel(modelIdStr);
+            const hasMemos = memoHistory && memoHistory.length > 0;
+
+            // 3. 채팅 혹은 메모 기록이 하나라도 있으면 '학습 중'으로 판단
+            const isStarted = hasHistory || hasMemos;
 
             return {
               ...model,
-              computedStatus: hasHistory ? "IN_PROGRESS" : "NOT_STARTED",
+              computedStatus: isStarted ? "IN_PROGRESS" : "NOT_STARTED",
             };
           } catch (error) {
             console.error(`DB 조회 실패 (${model.name}):`, error);
@@ -33,7 +42,8 @@ const StudySection = ({ category, models, filterType }) => {
           }
         }),
       );
-      // 2. ✨ 핵심: "진행 중인 학습" 탭일 때는 'IN_PROGRESS'만 필터링
+
+      // 4. "진행 중인 학습" 탭일 때는 'IN_PROGRESS'인 모델만 필터링해서 보여줌
       let finalDisplay = updatedModels;
       if (filterType === "진행 중인 학습") {
         finalDisplay = updatedModels.filter(
@@ -45,11 +55,11 @@ const StudySection = ({ category, models, filterType }) => {
     };
 
     updateStudyStatus();
-  }, [models, filterType]); // filterType이 바뀔 때도 다시 실행되도록 추가
+  }, [models, filterType]);
 
-  // 데이터가 없을 때 표시할 내용 (필터링 결과가 0개일 때)
+  // 진행 중인 학습 탭에서 결과가 없으면 섹션 자체를 숨김
   if (modelsWithStatus.length === 0 && filterType === "진행 중인 학습") {
-    return null; // 혹은 "진행 중인 학습이 없습니다" 메시지 출력
+    return null;
   }
 
   return (
@@ -70,7 +80,7 @@ const StudySection = ({ category, models, filterType }) => {
               category={model.type}
               title={model.name}
               date={model.updatedAt || "2026. 02. 07"}
-              // 👇 DB에서 계산된 상태 적용
+              // 계산된 상태에 따라 버튼과 UI가 변함
               isInProgress={model.computedStatus === "IN_PROGRESS"}
               imgUrl={model.thumbnailUrl}
             />
