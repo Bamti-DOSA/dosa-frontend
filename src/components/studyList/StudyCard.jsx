@@ -3,7 +3,7 @@ import { Bookmark, Calendar } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const StudyCard = ({ category, title, date, isInProgress = true, imgUrl, objectId }) => {
+const StudyCard = ({ category, title, date, isInProgress = true, thumbnailUrl, objectId }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const navigate = useNavigate();
 
@@ -40,7 +40,7 @@ const StudyCard = ({ category, title, date, isInProgress = true, imgUrl, objectI
         </div>
         {/* 드론 이미지 */}
         <div className="absolute bottom-[-10px] right-[-10px] w-[220px]">
-          <img src={imgUrl} alt={title} className="w-full object-contain" />
+          <img src={thumbnailUrl} alt={title} className="w-full object-contain" />
         </div>
 
         <h2 className="t-24-bold">{title}</h2>

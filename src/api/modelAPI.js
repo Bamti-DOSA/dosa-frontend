@@ -57,8 +57,7 @@ export const getAssemblyModelSignedUrl = async (assemblyModelUrl) => {
   try {
     const baseUrl = import.meta.env.VITE_API_BASE_URL;
     
-    // assemblyModelUrl: "machine_vice/completed/machine_vice_final.glb"
-    const filename = assemblyModelUrl; // 또는 assemblyModelUrl.split('/').pop()
+    const filename = assemblyModelUrl;
     
     const response = await fetch(
       `${baseUrl}/api/models?filename=${encodeURIComponent(filename)}`,
@@ -76,10 +75,26 @@ export const getAssemblyModelSignedUrl = async (assemblyModelUrl) => {
 
     const result = await response.json();
     
-    // result.data: "https://dosa-3d-models.s3... (S3 임시 URL)"
-    return result.data;
+    // 💡 result.data 확인
+    console.log('🔍 받은 데이터:', result);
+    console.log('🔍 result.data:', result.data);
+    
+    // result.data가 이미 완전한 URL이면 그대로 반환
+    // 만약 상대 경로라면 baseUrl을 붙여야 함
+    const url = result.data;
+    
+    // URL이 http로 시작하면 완전한 URL
+    if (url.startsWith('http')) {
+      console.log('✅ 완전한 URL:', url);
+      return url;
+    } else {
+      // 상대 경로라면 base URL 추가
+      console.log('⚠️ 상대 경로, base URL 추가');
+      return `${baseUrl}/${url}`;
+    }
     
   } catch (error) {
+    console.error('❌ Pre-signed URL 에러:', error);
     return null;
   }
 };

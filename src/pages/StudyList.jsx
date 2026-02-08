@@ -1,7 +1,6 @@
 import SideBar from "../components/studyList/SideBar";
 import StudyCard from "../components/studyList/StudyCard";
 import StudySection from "../components/studyList/StudySection";
-import { ArrowRight } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getModels } from "../api/modelAPI";
 
@@ -11,9 +10,16 @@ const StudyList = () => {
 
   useEffect(() => {
     const loadAllData = async () => {
-      const data = await getModels();
-      setAllModels(Array.isArray(data) ? data : []);
-      setLoading(false);
+      try {
+        const data = await getModels();
+        console.log('📦 받아온 데이터:', data);
+        setAllModels(data);
+      } catch (error) {
+        console.error('❌ 데이터 로딩 실패:', error);
+        setAllModels([]);
+      } finally {
+        setLoading(false);
+      }
     };
     loadAllData();
   }, []);
@@ -42,7 +48,7 @@ const StudyList = () => {
                 category={model.type}
                 isInProgress={true}
                 date={model.updatedAt || "2026. 02. 07"}
-                imgUrl={model.thumbnailUrl}
+                thumbnailUrl={model.thumbnailUrl}
               />
             ))}
           </div>

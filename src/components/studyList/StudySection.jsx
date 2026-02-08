@@ -22,7 +22,7 @@ const StudySection = ({ category, models }) => {
               title={model.name}
               date={model.updatedAt || "2026. 02. 07"}
               isInProgress={model.status === "IN_PROGRESS"}
-              imgUrl={model.thumbnailUrl}
+              thumbnailUrl={model.thumbnailUrl}
             />
           ))
         ) : (
