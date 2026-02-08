@@ -28,10 +28,11 @@ const DRONE_FILE_MAP = {
 
 // Suspension 파일명 매핑
 const SUSPENSION_FILE_MAP = {
-  base: "base.glb",
-  nut: "nut.glb",
-  rod: "rod.glb",
-  spring: "spring.glb",
+  base: "BASE.glb",
+  nit: "NIT.glb",
+  nut: "NUT.glb",
+  rod: "ROD.glb",
+  spring: "SPRING.glb",
 };
 
 // V4 Engine 파일 매핑 추가
