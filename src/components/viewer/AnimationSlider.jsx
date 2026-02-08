@@ -1,71 +1,76 @@
-import React from 'react';
-import { RotateCcw } from 'lucide-react';
+import React from "react";
+import { RotateCcw } from "lucide-react";
 
-function AnimationSlider({ 
-  currentFrame, 
-  totalFrames, 
-  onFrameChange, 
+function AnimationSlider({
+  currentFrame,
+  totalFrames,
+  onFrameChange,
   onReset,
-  modelUrl
+  modelUrl,
 }) {
   const handleDownload = async () => {
     try {
       const response = await fetch(modelUrl);
       const blob = await response.blob();
-      
-      const a = document.createElement('a');
+
+      const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = 'assembly_model.glb';
+      a.download = "assembly_model.glb";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     } catch (error) {
-      console.error('❌ Download failed:', error);
+      console.error("❌ Download failed:", error);
     }
   };
 
   return (
-    <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-lg p-4 w-[90%] max-w-2xl z-10">
-      {/* 프레임 정보 */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-sm font-medium text-gray-700">
-          조립 애니메이션
-        </div>
-        <div className="text-sm text-gray-500">
-          Frame: {currentFrame} / {totalFrames}
-        </div>
-      </div>
-
-      {/* 슬라이더 */}
-      <div className="mb-3">
+    <div className="w-full py-2">
+      <div className="flex items-center w-full">
         <input
           type="range"
           min="0"
           max={totalFrames}
           value={currentFrame}
           onChange={(e) => onFrameChange(Number(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-main-1"
+          className="custom-slider w-full h-[6px] bg-[#E4EBF1] rounded-full appearance-none cursor-pointer outline-none"
           style={{
-            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentFrame / totalFrames) * 100}%, #e5e7eb ${(currentFrame / totalFrames) * 100}%, #e5e7eb 100%)`
+            // 슬라이더 진행바 색상 (이미지처럼 은은한 파란색 계열)
+            background: `linear-gradient(to right, #5A8CAF 0%, #5A8CAF ${(currentFrame / totalFrames) * 100}%, #E5E7EB ${(currentFrame / totalFrames) * 100}%, #E5E7EB 100%)`,
           }}
         />
       </div>
 
-      {/* 리셋 버튼 + 상태 표시 */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onReset}
-          className="px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm text-gray-600"
-          title="처음으로"
-        >
-          <RotateCcw size={16} />
-          <span>처음으로</span>
-        </button>
+      {/* 가로로 긴 캡슐 모양 Thumb을 위한 커스텀 CSS */}
+      <style jsx>{`
+        /* 크롬, 사파리, 엣지용 */
+        .custom-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 39.634px; /* 👈 가로로 긴 캡슐 형태 */
+          height: 18px; /* 👈 세로 높이 */
+          background-color: #5a8caf; /* 👈 이미지의 조절 바 색상 */
+          border-radius: 10px; /* 캡슐 모양을 위한 라운드 */
+          cursor: pointer;
+          border: none;
+          transition: all 0.2s ease;
+        }
 
-        <div className="text-xs text-gray-500">
-          {currentFrame === 0 ? '🔧 분해됨' : currentFrame === totalFrames ? '✅ 조립됨' : '⚙️ 진행 중'}
-        </div>
-      </div>
+        .custom-slider::-webkit-slider-thumb:hover {
+          background-color: #4a7b9d; /* 호버 시 약간 진하게 */
+          transform: scaleY(1.1);
+        }
+
+        /* 파이어폭스용 */
+        .custom-slider::-moz-range-thumb {
+          width: 24px;
+          height: 12px;
+          background-color: #5a8caf;
+          border-radius: 6px;
+          cursor: pointer;
+          border: none;
+        }
+      `}</style>
     </div>
   );
 }

@@ -69,16 +69,18 @@ const PartDetail = ({ selectedPart }) => {
 
   if (!selectedPart) return null;
 
+  // ... 상단 로직은 동일 ...
+
   return (
     <motion.div
       animate={{ y: isHidden ? height - 40 : 0 }}
       style={{
         display: "flex",
-        left: "170px",
-        right: "30px",
         height: `${height}px`,
         position: "absolute",
-        bottom: "30px",
+        left: "150px",
+        right: "40px",
+        bottom: "20px",
         zIndex: 40,
         gap: "4px",
       }}
@@ -93,8 +95,9 @@ const PartDetail = ({ selectedPart }) => {
           const startY = e.clientY;
           const startHeight = height;
           const onMouseMove = (moveE) => {
-            const newHeight = startHeight + (startY - moveE.clientY);
-            setHeight(Math.min(Math.max(newHeight, 160), 450));
+            const deltaY = startY - moveE.clientY;
+            const newHeight = startHeight + deltaY;
+            setHeight(Math.min(Math.max(newHeight, 120), 264)); // 서정님 요청 범위
           };
           const onMouseUp = () => {
             document.removeEventListener("mousemove", onMouseMove);
@@ -103,7 +106,6 @@ const PartDetail = ({ selectedPart }) => {
           document.addEventListener("mousemove", onMouseMove);
           document.addEventListener("mouseup", onMouseUp);
         }}
-        onClick={() => isHidden && setIsHidden(false)}
       >
         <div className="w-16 h-1.5 bg-gray-300 rounded-full group-hover:bg-blue-400 transition-colors" />
       </div>
@@ -111,15 +113,17 @@ const PartDetail = ({ selectedPart }) => {
       {/* 1. 왼쪽 카드: 이름 & 설명 */}
       <div
         style={{ width: `${leftWidth}%` }}
-        className="bg-bg-2 backdrop-blur-md rounded-2xl p-7 border border-white/40 flex flex-col overflow-hidden shadow-none"
+        className="bg-[#EDF2F6] backdrop-blur-md rounded-lg pt-5 pr-3 pb-5 pl-6 border border-white/40 flex flex-col min-h-0 overflow-hidden shadow-none"
       >
-        <div className="sticky top-0 z-10 bg-white/5 pb-4">
-          <h2 className="text-xl font-bold text-gray-700">
+        <div className="shrink-0 mb-2">
+          {" "}
+          {/* sticky 제거하고 shrink-0으로 고정 */}
+          <h2 className="text-[18px] font-bold text-[#262729]">
             {selectedPart.name}
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-          <p className="text-gray-500 text-base leading-relaxed">
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+          <p className="text-[#3A3C40] text-[16px] leading-relaxed">
             {selectedPart.description}
           </p>
         </div>
@@ -127,7 +131,7 @@ const PartDetail = ({ selectedPart }) => {
 
       {/* 2. 중앙 리사이즈 핸들 */}
       <div
-        className="w-2 cursor-col-resize flex items-center justify-center group"
+        className="w-2 cursor-col-resize flex items-center justify-center group shrink-0"
         onMouseDown={(e) => {
           const startX = e.clientX;
           const startWidth = leftWidth;
@@ -146,30 +150,33 @@ const PartDetail = ({ selectedPart }) => {
         <div className="w-[2px] h-12 bg-gray-200 group-hover:bg-blue-500 rounded-full transition-colors" />
       </div>
 
-      {/* 3. 오른쪽 카드: 재질 선택 (드래그 스크롤 적용) */}
+      {/* 3. 오른쪽 카드: 재질 선택 (스크롤 개선) */}
       <div
         style={{ width: `${100 - leftWidth}%` }}
-        className="bg-bg-2 backdrop-blur-md rounded-2xl p-7 border border-white/40 flex flex-col overflow-hidden"
+        className="bg-[#EDF2F6] backdrop-blur-md rounded-lg p-7 border border-white/40 flex flex-col min-h-0 overflow-hidden"
       >
-        <h3 className="text-xl font-bold text-gray-700 mb-1">재질</h3>
-        {/* 재질 이름 및 설명 영역 */}
-        <div className="mb-4">
-          <p className="text-sm font-semibold text-gray-800">
+        <h3 className="text-[14px] font-medium text-[#888E96] mb-1 shrink-0">
+          재질
+        </h3>
+
+        {/* 👇 재질 이름 및 설명 영역: 높이 제한 해제 및 개별 스크롤 가능하게 수정 */}
+        <div className="flex-1 overflow-y-auto min-h-0 mb-4 pr-2 custom-scrollbar">
+          <p className="text-[18px] font-bold text-gray-800">
             {selectedMaterial.name}
           </p>
-          <p className="text-xs text-gray-400 mt-1 leading-snug h-[32px] overflow-hidden">
+          <p className="text-[16px] text-[#3A3C40] mt-1 leading-snug">
             {selectedMaterial.desc}
           </p>
         </div>
 
-        {/* 재질 구체 리스트 */}
+        {/* 재질 구체 리스트 (하단 고정) */}
         <div
           ref={scrollRef}
           onMouseDown={onDragStart}
           onMouseMove={onDragMove}
           onMouseUp={onDragEnd}
           onMouseLeave={onDragEnd}
-          className={`flex gap-3 overflow-x-auto pb-2 custom-scrollbar no-scrollbar select-none
+          className={`flex gap-3 overflow-x-auto pb-2 shrink-0 no-scrollbar select-none
             ${isDragging ? "cursor-grabbing" : "cursor-grab"}
           `}
         >
@@ -194,15 +201,6 @@ const PartDetail = ({ selectedPart }) => {
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .select-none {
-          user-select: none;
-        }
-      `}</style>
     </motion.div>
   );
 };
