@@ -69,8 +69,6 @@ const PartDetail = ({ selectedPart }) => {
 
   if (!selectedPart) return null;
 
-  // ... 상단 로직은 동일 ...
-
   return (
     <motion.div
       animate={{ y: isHidden ? height - 40 : 0 }}
@@ -97,7 +95,7 @@ const PartDetail = ({ selectedPart }) => {
           const onMouseMove = (moveE) => {
             const deltaY = startY - moveE.clientY;
             const newHeight = startHeight + deltaY;
-            setHeight(Math.min(Math.max(newHeight, 120), 264)); // 서정님 요청 범위
+            setHeight(Math.min(Math.max(newHeight, 120), 264));
           };
           const onMouseUp = () => {
             document.removeEventListener("mousemove", onMouseMove);
@@ -116,14 +114,12 @@ const PartDetail = ({ selectedPart }) => {
         className="bg-[#EDF2F6] backdrop-blur-md rounded-lg pt-5 pr-3 pb-5 pl-6 border border-white/40 flex flex-col min-h-0 overflow-hidden shadow-none"
       >
         <div className="shrink-0 mb-2">
-          {" "}
-          {/* sticky 제거하고 shrink-0으로 고정 */}
           <h2 className="text-[18px] font-bold text-[#262729]">
             {selectedPart.name}
           </h2>
         </div>
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
-          <p className="text-[#3A3C40] text-[16px] leading-relaxed">
+          <p className="text-[#3A3C40] text-[16px] leading-relaxed whitespace-pre-line">
             {selectedPart.description}
           </p>
         </div>
@@ -159,7 +155,6 @@ const PartDetail = ({ selectedPart }) => {
           재질
         </h3>
 
-        {/* 👇 재질 이름 및 설명 영역: 높이 제한 해제 및 개별 스크롤 가능하게 수정 */}
         <div className="flex-1 overflow-y-auto min-h-0 mb-4 pr-2 custom-scrollbar">
           <p className="text-[18px] font-bold text-gray-800">
             {selectedMaterial.name}
