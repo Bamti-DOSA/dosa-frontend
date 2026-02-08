@@ -9,23 +9,23 @@ import { getModelDetail } from "../api/modelAPI";
 const Viewer = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   // API 데이터 관련
   const [loading, setLoading] = useState(true);
   const [apiData, setApiData] = useState(null);
   const [error, setError] = useState(null);
-  
+
   // UI State
   const [activeTab, setActiveTab] = useState("note");
   const [aiChats, setAiChats] = useState([]);
   const [showAiNote, setShowAiNote] = useState(false);
   const [floatingMessages, setFloatingMessages] = useState([]);
-  
+
   // 리사이즈 관련
   const [rightPanelWidth, setRightPanelWidth] = useState(33);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   const containerRef = useRef(null);
   const captureRef = useRef(null);
 
@@ -33,8 +33,8 @@ const Viewer = () => {
   useEffect(() => {
     const loadModelData = async () => {
       if (!id) {
-        console.error('❌ URL에 ID가 없습니다!');
-        setError('잘못된 접근입니다.');
+        console.error("❌ URL에 ID가 없습니다!");
+        setError("잘못된 접근입니다.");
         setLoading(false);
         return;
       }
@@ -43,20 +43,19 @@ const Viewer = () => {
       setError(null);
 
       try {
-        console.log('🚀 Viewer - Loading model with ID:', id);
-        
+        console.log("🚀 Viewer - Loading model with ID:", id);
+
         const data = await getModelDetail(id);
-        
+
         if (!data) {
           throw new Error(`ID ${id}에 해당하는 모델을 찾을 수 없습니다.`);
         }
 
-        console.log('📥 Viewer - API response:', data);
+        console.log("📥 Viewer - API response:", data);
         setApiData(data);
-        
       } catch (err) {
         console.error("❌ 데이터 로딩 실패:", err);
-        setError(err.message || '데이터를 불러오는데 실패했습니다.');
+        setError(err.message || "데이터를 불러오는데 실패했습니다.");
       } finally {
         setLoading(false);
       }
@@ -132,13 +131,11 @@ const Viewer = () => {
       <div className="w-full h-screen flex items-center justify-center bg-bg-1">
         <div className="flex flex-col items-center gap-4">
           <div className="text-red-500 text-xl font-bold">
-            {error || '모델 데이터를 찾을 수 없습니다.'}
+            {error || "모델 데이터를 찾을 수 없습니다."}
           </div>
-          <div className="text-sm text-gray-400">
-            요청한 ID: {id}
-          </div>
+          <div className="text-sm text-gray-400">요청한 ID: {id}</div>
           <button
-            onClick={() => navigate('/study-list')}
+            onClick={() => navigate("/study-list")}
             className="mt-4 px-6 py-3 bg-main-1 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             학습 목록으로 돌아가기
@@ -153,8 +150,8 @@ const Viewer = () => {
       {/* 헤더 */}
       <header className="h-16 shrink-0 flex items-center justify-between px-6 z-10">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate('/study-list')}
+          <button
+            onClick={() => navigate("/study-list")}
             className="p-2 rounded hover:bg-gray-200 transition-colors"
           >
             <Menu className="text-gray-700" size={24} strokeWidth={2.5} />
@@ -166,7 +163,7 @@ const Viewer = () => {
             </span>
           </div>
         </div>
-        <ReportExporter 
+        <ReportExporter
           captureRef={captureRef}
           currentPart={null}
           chatHistory={aiChats}
@@ -180,9 +177,10 @@ const Viewer = () => {
           className="w-full h-full flex bg-bg-1 relative gap-4"
         >
           {/* 1. Left Container */}
-          <div 
+          <div
             ref={captureRef}
-            className="flex-1 h-full min-w-0 transition-all duration-300 ease-out">
+            className="flex-1 h-full min-w-0 transition-all duration-300 ease-out"
+          >
             <LeftContainer
               apiData={apiData}
               showAiNote={showAiNote}
@@ -217,6 +215,7 @@ const Viewer = () => {
               isAiNoteOpen={showAiNote}
               aiChats={aiChats}
               setAiChats={setAiChats}
+              modelId={id}
             />
           </div>
 

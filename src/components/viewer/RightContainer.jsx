@@ -8,6 +8,9 @@ import NoteItemList from "./note/NoteItemList";
 import NoteFull from "./note/NoteFull";
 import AssistantAi from "./ai/AssistantAi";
 import AiMenu from "./ai/AiMenu";
+import { formatSystemName } from "../../utils/formatModelName";
+import { getModelById } from "../../api/modelAPI";
+import { getLastChatId, saveChat } from "../../api/aiDB";
 
 const parseDate = (dateStr) => {
   const [dayPart, monthStr, timePart] = dateStr.split(" ");
@@ -57,12 +60,14 @@ const RightContainer = ({
   isAiNoteOpen,
   aiChats,
   setAiChats,
+  modelId,
 }) => {
   const [notes, setNotes] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [expandedNoteId, setExpandedNoteId] = useState(null);
 
+  const [modelName, setModelName] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [deletingNoteId, setDeletingNoteId] = useState(null);
 
@@ -160,9 +165,84 @@ const RightContainer = ({
     }, 150);
   };
 
-  const handleAiChatSelect = () => setIsMenuOpen(false);
-  const handleNewAiChat = () => setIsMenuOpen(false);
+  const handleSelectChat = (chatId) => {
+    setCurrentChatId(chatId); // 선택한 ID로 변경 -> AssistantAi가 이를 감지해 내역 로드
+    setIsMenuOpen(false); // 메뉴 닫기
+  };
 
+  const [currentChatId, setCurrentChatId] = useState(null); // 현재 채팅방 ID 관리
+  const handleNewAiChat = async () => {
+    try {
+      // 1. 전체 DB에서 가장 큰 ID 가져오기 (+1을 위해)
+      const lastId = await getLastChatId();
+      const newId = lastId + 1;
+
+      // 2. 새 채팅방의 초기 데이터 구조 정의
+      const initialMsg = [
+        {
+          id: 1,
+          role: "assistant",
+          content: "안녕하세요! 무엇을 도와드릴까요?",
+        },
+      ];
+
+      const newChat = {
+        chatId: newId,
+        modelId: String(modelId), // Viewer에서 넘어온 현재 모델 ID
+        messages: initialMsg,
+        lastUpdated: Date.now(), // 💡 필터링/정렬을 위해 필수!
+      };
+
+      // 3. IndexedDB에 즉시 저장 (이 과정이 있어야 메뉴에 뜹니다)
+      await saveChat(newChat);
+      console.log(`채팅 저장 완료: ID ${lastId}`);
+
+      // 4. 상태 업데이트 (AssistantAi가 이 변경을 감지함)
+      setCurrentChatId(newId);
+
+      console.log(`🚀 새 채팅 생성 완료: ID ${newId}`);
+    } catch (error) {
+      console.error("새 채팅 생성 중 에러:", error);
+    }
+  };
+
+  useEffect(() => {
+    const initAiSession = async () => {
+      try {
+        // 1. 💡 먼저 modelId로 모델 상세 정보를 가져와서 시스템용 이름을 설정합니다.
+        const currentModel = await getModelById(modelId); //
+        if (currentModel && currentModel.name) {
+          // "Machine Vice" -> "MACHINE_VICE" 형태로 변환
+          const formattedName = formatSystemName(currentModel.name);
+          setModelName(formattedName);
+          console.log("✅ AI용 모델명 설정 완료:", formattedName);
+        }
+
+        // 2. 세션스토리지 확인 및 세션 초기화 로직 (기존 유지)
+        const isVisited = sessionStorage.getItem("ai_session_active");
+
+        if (!isVisited) {
+          console.log("새로운 브라우저 세션 시작: 새 채팅을 생성합니다.");
+          await handleNewAiChat();
+          sessionStorage.setItem("ai_session_active", "true");
+        } else {
+          console.log("기존 세션 유지: 마지막 대화방을 연결합니다.");
+          const lastId = await getLastChatId();
+          if (lastId > 0) {
+            setCurrentChatId(lastId);
+          } else {
+            await handleNewAiChat();
+          }
+        }
+      } catch (error) {
+        console.error("AI 초기화 중 에러 발생:", error);
+      }
+    };
+
+    if (modelId) {
+      initAiSession();
+    }
+  }, [modelId]);
   useEffect(() => {
     if (activeTab === "note" && isAdding && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -261,8 +341,10 @@ const RightContainer = ({
             <AiMenu
               chatSessions={aiChats}
               onClose={() => setIsMenuOpen(false)}
-              onSelectChat={handleAiChatSelect}
+              onSelectChat={handleSelectChat}
               onNewChat={handleNewAiChat}
+              modelId={modelId}
+              currentChatId={currentChatId}
             />
           ))}
 
@@ -295,7 +377,14 @@ const RightContainer = ({
         {/* [TAB 2] AI 화면 */}
         {/* AssistantAi에 sessions 데이터를 넘겨주어야 실제 대화가 보입니다. 
            (여기서는 AssistantAi 구현부를 모르므로, 필요 시 props를 추가하세요: sessions={aiChats}) */}
-        {activeTab === "ai" && <AssistantAi />}
+        {activeTab === "ai" && (
+          <AssistantAi
+            modelName={modelName}
+            modelId={modelId}
+            currentChatId={currentChatId} // 💡 생성된 ID 전달
+            setCurrentChatId={setCurrentChatId} // 초기 로드용
+          />
+        )}
       </div>
     </div>
   );
