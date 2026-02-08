@@ -1,27 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Edit from "../../../assets/icons/icon-edit.svg";
-import { getChatsByModel } from "../../../api/aiDB"; // DB 함수 추가
+import { getChatsByModel } from "../../../api/aiDB";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
   const [chatSessions, setChatSessions] = useState([]);
+  // 💡 그룹별 개별 상태 관리를 위해 객체({})로 초기화합니다.
   const [openGroups, setOpenGroups] = useState({});
 
-  // 💡 데이터 로드 및 포맷팅
   useEffect(() => {
     const loadHistory = async () => {
-      if (!modelId) {
-        console.warn("AiMenu: modelId가 없습니다.");
-        return;
-      }
-
-      console.log(
-        `🔍 ID: ${modelId} (타입: ${typeof modelId}) 모델의 대화 조회 중...`,
-      );
+      if (!modelId) return;
       const chats = await getChatsByModel(modelId);
-      console.log("📥 DB에서 가져온 원본 데이터:", chats); // 💡 여기서 []가 나오면 타입 문제임
 
       const formattedChats = chats.map((chat) => {
-        // 날짜 객체 생성 (lastUpdated가 없으면 에러 나므로 현재 시간으로 방어)
         const d = new Date(chat.lastUpdated || Date.now());
         const months = [
           "Jan",
@@ -39,7 +31,6 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
         ];
         const dateStr = `${d.getDate()}. ${months[d.getMonth()]}`;
 
-        // 첫 번째 유저 질문 추출
         const firstUserMsg = chat.messages?.find(
           (m) => m.role === "user",
         )?.content;
@@ -52,19 +43,26 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
         };
       });
 
-      // 최신순 정렬
       setChatSessions(
         formattedChats.sort(
           (a, b) => (b.lastUpdated || 0) - (a.lastUpdated || 0),
         ),
       );
+
+      // 💡 데이터 로드 시 모든 그룹을 기본적으로 펼침 상태로 설정
+      const initialOpenState = {};
+      formattedChats.forEach((chat) => {
+        const groupName = getGroupName(chat.date);
+        initialOpenState[groupName] = true;
+      });
+      setOpenGroups(initialOpenState);
     };
 
     loadHistory();
   }, [modelId]);
 
-  const groupedChats = useMemo(() => {
-    const groups = {};
+  // 💡 오늘 날짜인지 판별하여 그룹명을 반환하는 유틸 함수
+  const getGroupName = (chatDate) => {
     const today = new Date();
     const months = [
       "Jan",
@@ -81,9 +79,13 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
       "Dec",
     ];
     const todayStr = `${today.getDate()}. ${months[today.getMonth()]}`;
+    return chatDate === todayStr ? "최근" : chatDate;
+  };
 
+  const groupedChats = useMemo(() => {
+    const groups = {};
     chatSessions.forEach((chat) => {
-      const groupName = chat.date === todayStr ? "최근" : chat.date;
+      const groupName = getGroupName(chat.date);
       if (!groups[groupName]) groups[groupName] = [];
       groups[groupName].push(chat);
     });
@@ -96,6 +98,14 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
     return b.localeCompare(a);
   });
 
+  // 💡 특정 그룹의 아이디를 받아 해당 그룹만 토글합니다.
+  const handleToggleGroup = (groupName) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [groupName]: !prev[groupName],
+    }));
+  };
+
   return (
     <>
       <div
@@ -105,7 +115,10 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
       <div className="absolute top-0 left-0 bottom-0 w-[260px] bg-[#F6F8F9] shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-[9999] overflow-y-auto border-r border-gray-100 animate-slide-in-left custom-scrollbar">
         <div className="p-5">
           <button
-            onClick={onNewChat}
+            onClick={() => {
+              onClose(true);
+              onNewChat();
+            }}
             className="b-16-med-120 text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2 mb-6"
           >
             <img src={Edit} alt="edit" className="w-4 h-4" /> 새로운 대화 시작
@@ -118,28 +131,52 @@ const AiMenu = ({ modelId, onClose, onSelectChat, onNewChat }) => {
           )}
 
           <div className="space-y-4">
-            {groupKeys.map((groupName) => (
-              <div key={groupName} className="select-none">
-                <div className="py-2 px-1 mb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  {groupName}
+            {groupKeys.map((groupName) => {
+              const isOpen = openGroups[groupName]; // 💡 현재 그룹의 오픈 상태 확인
+
+              return (
+                <div key={groupName} className="select-none">
+                  {/* 헤더 부분 클릭 시에도 토글되도록 설정 */}
+                  <div
+                    className="flex flex-row justify-between items-center cursor-pointer  px-1 transition-colors"
+                    onClick={() => handleToggleGroup(groupName)}
+                  >
+                    <div className="py-2 mb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      {groupName}
+                    </div>
+                    {/* 💡 상태에 따라 아이콘 변경 */}
+                    {isOpen ? (
+                      <ChevronUp size={18} className="text-gray-400" />
+                    ) : (
+                      <ChevronDown size={18} className="text-gray-400" />
+                    )}
+                  </div>
+
+                  {/* 💡 isOpen이 true일 때만 목록을 렌더링 */}
+                  {isOpen && (
+                    <div className="space-y-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                      {groupedChats[groupName].map((chat) => (
+                        <button
+                          key={chat.id}
+                          onClick={() => {
+                            onSelectChat(chat.id);
+                            onClose();
+                          }}
+                          className="w-full text-left p-3 b-16-med-120 text-gray-9 hover:bg-bg-1 rounded-[8px] transition-all truncate"
+                        >
+                          {chat.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  {groupedChats[groupName].map((chat) => (
-                    <button
-                      key={chat.id}
-                      onClick={() => onSelectChat(chat.id)}
-                      className="w-full text-left p-3 b-16-med-120 text-gray-9 hover:bg-bg-1 rounded-[8px] transition-all truncate "
-                    >
-                      {chat.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
     </>
   );
 };
+
 export default AiMenu;
