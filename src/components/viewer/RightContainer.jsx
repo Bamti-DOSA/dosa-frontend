@@ -1,34 +1,24 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Menu, MessageSquare, File } from "lucide-react";
-
-// import fileblack from "../../assets/icons/icon-file-black.svg";
-// import file from "../../assets/icons/icon-file.svg";
 import NoteMenu from "./note/NoteMenu";
 import NoteItemList from "./note/NoteItemList";
 import NoteFull from "./note/NoteFull";
 import AssistantAi from "./ai/AssistantAi";
 import AiMenu from "./ai/AiMenu";
-import { formatSystemName } from "../../utils/formatModelName";
-import { getModelById } from "../../api/modelAPI";
-import { getLastChatId, saveChat } from "../../api/aiDB";
+import { 
+  getNotesByModelId, 
+  createNote, 
+  updateNote, 
+  deleteNote 
+} from "../../utils/noteDB";
 
 const parseDate = (dateStr) => {
   const [dayPart, monthStr, timePart] = dateStr.split(" ");
   const day = parseInt(dayPart.replace(".", ""), 10);
   const [hours, minutes] = timePart.split(":").map(Number);
   const monthMap = {
-    Jan: 0,
-    Feb: 1,
-    Mar: 2,
-    Apr: 3,
-    May: 4,
-    Jun: 5,
-    Jul: 6,
-    Aug: 7,
-    Sep: 8,
-    Oct: 9,
-    Nov: 10,
-    Dec: 11,
+    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
   };
   const now = new Date();
   return new Date(now.getFullYear(), monthMap[monthStr], day, hours, minutes);
@@ -36,20 +26,7 @@ const parseDate = (dateStr) => {
 
 const getFormattedDate = () => {
   const now = new Date();
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${now.getDate()}. ${months[now.getMonth()]} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 };
 
@@ -66,26 +43,31 @@ const RightContainer = ({
   const [isAdding, setIsAdding] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [expandedNoteId, setExpandedNoteId] = useState(null);
-
-  const [modelName, setModelName] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [deletingNoteId, setDeletingNoteId] = useState(null);
 
   const scrollRef = useRef(null);
-
   const containerRef = useRef(null);
   const [width, setWidth] = useState(0);
 
-  // 컨테이너의 실제 너비를 감지하는 로직
+  useEffect(() => {
+    if (modelId) {
+      loadNotes();
+    }
+  }, [modelId]);
+
+  const loadNotes = async () => {
+    const loadedNotes = await getNotesByModelId(modelId);
+    setNotes(loadedNotes);
+  };
+
   useEffect(() => {
     if (!containerRef.current) return;
-
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
         setWidth(entry.contentRect.width);
       }
     });
-
     resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
   }, []);
@@ -102,29 +84,36 @@ const RightContainer = ({
     }, {});
   }, [notes]);
 
-  const handleSaveNote = (noteData) => {
+  const handleSaveNote = async (noteData) => {
     const dateStr = getFormattedDate();
+    
     if (editingNote) {
-      setNotes((prevNotes) =>
-        prevNotes.map((note) =>
-          note.id === editingNote.id
-            ? { ...note, ...noteData, date: dateStr }
-            : note,
-        ),
-      );
-      setEditingNote(null);
-    } else {
-      const newNote = {
-        id: Date.now().toString(),
-        date: dateStr,
+      const success = await updateNote(editingNote.id, {
         title: noteData.title || "제목 없음",
         content: noteData.content,
         category: noteData.category,
         type: noteData.type,
         attachments: noteData.attachments || [],
-      };
-      setNotes([...notes, newNote]);
+      });
+      
+      if (success) {
+        await loadNotes();
+      }
+      setEditingNote(null);
+    } else {
+      const newNote = await createNote(modelId, {
+        title: noteData.title || "제목 없음",
+        content: noteData.content,
+        category: noteData.category,
+        type: noteData.type,
+        attachments: noteData.attachments || [],
+      });
+      
+      if (newNote) {
+        await loadNotes();
+      }
     }
+    
     setIsAdding(false);
   };
 
@@ -145,10 +134,14 @@ const RightContainer = ({
   const handleDeleteRequest = (noteId) => {
     setDeletingNoteId(noteId);
   };
-  const handleDeleteConfirm = () => {
-    setNotes((prevNotes) =>
-      prevNotes.filter((note) => note.id !== deletingNoteId),
-    );
+
+  const handleDeleteConfirm = async () => {
+    const success = await deleteNote(deletingNoteId);
+    
+    if (success) {
+      await loadNotes();
+    }
+    
     setDeletingNoteId(null);
     setExpandedNoteId(null);
   };
@@ -165,84 +158,9 @@ const RightContainer = ({
     }, 150);
   };
 
-  const handleSelectChat = (chatId) => {
-    setCurrentChatId(chatId); // 선택한 ID로 변경 -> AssistantAi가 이를 감지해 내역 로드
-    setIsMenuOpen(false); // 메뉴 닫기
-  };
+  const handleAiChatSelect = () => setIsMenuOpen(false);
+  const handleNewAiChat = () => setIsMenuOpen(false);
 
-  const [currentChatId, setCurrentChatId] = useState(null); // 현재 채팅방 ID 관리
-  const handleNewAiChat = async () => {
-    try {
-      // 1. 전체 DB에서 가장 큰 ID 가져오기 (+1을 위해)
-      const lastId = await getLastChatId();
-      const newId = lastId + 1;
-
-      // 2. 새 채팅방의 초기 데이터 구조 정의
-      const initialMsg = [
-        {
-          id: 1,
-          role: "assistant",
-          content: "안녕하세요! 무엇을 도와드릴까요?",
-        },
-      ];
-
-      const newChat = {
-        chatId: newId,
-        modelId: String(modelId), // Viewer에서 넘어온 현재 모델 ID
-        messages: initialMsg,
-        lastUpdated: Date.now(), // 💡 필터링/정렬을 위해 필수!
-      };
-
-      // 3. IndexedDB에 즉시 저장 (이 과정이 있어야 메뉴에 뜹니다)
-      await saveChat(newChat);
-      console.log(`채팅 저장 완료: ID ${lastId}`);
-
-      // 4. 상태 업데이트 (AssistantAi가 이 변경을 감지함)
-      setCurrentChatId(newId);
-
-      console.log(`🚀 새 채팅 생성 완료: ID ${newId}`);
-    } catch (error) {
-      console.error("새 채팅 생성 중 에러:", error);
-    }
-  };
-
-  useEffect(() => {
-    const initAiSession = async () => {
-      try {
-        // 1. 💡 먼저 modelId로 모델 상세 정보를 가져와서 시스템용 이름을 설정합니다.
-        const currentModel = await getModelById(modelId); //
-        if (currentModel && currentModel.name) {
-          // "Machine Vice" -> "MACHINE_VICE" 형태로 변환
-          const formattedName = formatSystemName(currentModel.name);
-          setModelName(formattedName);
-          console.log("✅ AI용 모델명 설정 완료:", formattedName);
-        }
-
-        // 2. 세션스토리지 확인 및 세션 초기화 로직 (기존 유지)
-        const isVisited = sessionStorage.getItem("ai_session_active");
-
-        if (!isVisited) {
-          console.log("새로운 브라우저 세션 시작: 새 채팅을 생성합니다.");
-          await handleNewAiChat();
-          sessionStorage.setItem("ai_session_active", "true");
-        } else {
-          console.log("기존 세션 유지: 마지막 대화방을 연결합니다.");
-          const lastId = await getLastChatId();
-          if (lastId > 0) {
-            setCurrentChatId(lastId);
-          } else {
-            await handleNewAiChat();
-          }
-        }
-      } catch (error) {
-        console.error("AI 초기화 중 에러 발생:", error);
-      }
-    };
-
-    if (modelId) {
-      initAiSession();
-    }
-  }, [modelId]);
   useEffect(() => {
     if (activeTab === "note" && isAdding && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -259,7 +177,6 @@ const RightContainer = ({
       ref={containerRef}
       className="w-full h-full flex flex-col relative bg-bg-2 rounded-[8px] overflow-hidden"
     >
-      {/* 삭제 모달 */}
       {deletingNoteId && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in">
           <div className="bg-white rounded-[16px] p-6 shadow-2xl w-[320px] flex flex-col items-center animate-scale-in">
@@ -289,7 +206,6 @@ const RightContainer = ({
         </div>
       )}
 
-      {/* 헤더 */}
       <div className="bg-[#FFF] p-4 flex justify-between items-center z-40 shrink-0 relative">
         <div className="flex items-center gap-3">
           <button
@@ -328,7 +244,6 @@ const RightContainer = ({
         </div>
       </div>
 
-      {/* 컨텐츠 영역 */}
       <div className="flex-1 relative w-full h-full overflow-hidden">
         {isMenuOpen &&
           (activeTab === "note" ? (
@@ -341,14 +256,11 @@ const RightContainer = ({
             <AiMenu
               chatSessions={aiChats}
               onClose={() => setIsMenuOpen(false)}
-              onSelectChat={handleSelectChat}
+              onSelectChat={handleAiChatSelect}
               onNewChat={handleNewAiChat}
-              modelId={modelId}
-              currentChatId={currentChatId}
             />
           ))}
 
-        {/* [TAB 1] 노트 화면 */}
         {activeTab === "note" &&
           (expandedNoteId && activeFullNote ? (
             <NoteFull
@@ -374,17 +286,7 @@ const RightContainer = ({
             />
           ))}
 
-        {/* [TAB 2] AI 화면 */}
-        {/* AssistantAi에 sessions 데이터를 넘겨주어야 실제 대화가 보입니다. 
-           (여기서는 AssistantAi 구현부를 모르므로, 필요 시 props를 추가하세요: sessions={aiChats}) */}
-        {activeTab === "ai" && (
-          <AssistantAi
-            modelName={modelName}
-            modelId={modelId}
-            currentChatId={currentChatId} // 💡 생성된 ID 전달
-            setCurrentChatId={setCurrentChatId} // 초기 로드용
-          />
-        )}
+        {activeTab === "ai" && <AssistantAi />}
       </div>
     </div>
   );

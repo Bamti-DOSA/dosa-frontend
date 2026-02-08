@@ -18,7 +18,6 @@ function SinglePartModel({ modelPath }) {
     const { scene } = useGLTF(modelPath);
     return <primitive object={scene.clone()} />;
   } catch (error) {
-    console.error("❌ GLTFLoader error:", error);
     return null;
   }
 }
@@ -36,12 +35,10 @@ const LeftContainer = ({
   const [selectedId, setSelectedId] = useState(null);
   const [showBriefing, setShowBriefing] = useState(false);
   const [showAssembly, setShowAssembly] = useState(true);
-
-  // 👇 애니메이션 상태 - isPlaying 제거
+  
   const [currentFrame, setCurrentFrame] = useState(0);
   const [totalFrames] = useState(100);
 
-  // async 데이터 변환
   useEffect(() => {
     const loadParts = async () => {
       const mapped = await mapModelData(apiData);
@@ -115,12 +112,10 @@ const LeftContainer = ({
   const currentPart = transformedParts.find((p) => p.id === selectedId);
   const assemblyPart = transformedParts.find((p) => p.isAssembly);
 
-  // 👇 리셋만 남김
   const handleReset = () => {
     setCurrentFrame(0);
   };
 
-  // 👇 슬라이더 변경
   const handleFrameChange = (frame) => {
     setCurrentFrame(frame);
   };
@@ -148,7 +143,6 @@ const LeftContainer = ({
       )}
 
       <div className="flex flex-1 gap-6 min-h-0">
-        {/* 1. 부품 리스트 */}
         <div className="h-full overflow-y-auto custom-scrollbar shrink-0 p-1">
           <PartList
             parts={transformedParts}
@@ -157,7 +151,6 @@ const LeftContainer = ({
           />
         </div>
 
-        {/* 2. 3D 캔버스 영역 */}
         <div className="flex-1 bg-white rounded-2xl relative overflow-hidden">
           {/* 💡 AiBriefing의 z-index를 더 높이고 위치를 확실히 잡습니다. */}
           {showBriefing && briefingData && (
@@ -190,7 +183,6 @@ const LeftContainer = ({
                 <OrbitControls makeDefault />
               </Canvas>
 
-              {/* 👇 슬라이더만 남김 */}
               <AnimationSlider
                 currentFrame={currentFrame}
                 totalFrames={totalFrames}

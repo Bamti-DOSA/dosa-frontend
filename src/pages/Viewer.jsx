@@ -33,7 +33,7 @@ const Viewer = () => {
   useEffect(() => {
     const loadModelData = async () => {
       if (!id) {
-        console.error("❌ URL에 ID가 없습니다!");
+        console.error("URL에 ID가 없습니다!");
         setError("잘못된 접근입니다.");
         setLoading(false);
         return;
@@ -43,7 +43,6 @@ const Viewer = () => {
       setError(null);
 
       try {
-        console.log("🚀 Viewer - Loading model with ID:", id);
 
         const data = await getModelDetail(id);
 
@@ -51,10 +50,9 @@ const Viewer = () => {
           throw new Error(`ID ${id}에 해당하는 모델을 찾을 수 없습니다.`);
         }
 
-        console.log("📥 Viewer - API response:", data);
         setApiData(data);
       } catch (err) {
-        console.error("❌ 데이터 로딩 실패:", err);
+        console.error("데이터 로딩 실패:", err);
         setError(err.message || "데이터를 불러오는데 실패했습니다.");
       } finally {
         setLoading(false);
@@ -64,7 +62,7 @@ const Viewer = () => {
     loadModelData();
   }, [id]);
 
-  // 👇 리사이즈 핸들러 (접기 로직 추가)
+  // 리사이즈 핸들러 (접기 로직 추가)
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -78,14 +76,14 @@ const Viewer = () => {
       const deltaPercent = (deltaX / containerWidth) * 100;
       let newWidth = startWidth + deltaPercent;
 
-      // 👇 최소값: 15% 미만이면 접기
+      // 최소값: 15% 미만이면 접기
       if (newWidth < 15) {
         setIsCollapsed(true);
         setRightPanelWidth(33); // 다시 펼칠 때를 위해 기본값 유지
         return;
       }
 
-      // 👇 최대값 제한
+      // 최대값 제한
       if (newWidth > 50) newWidth = 50;
       if (newWidth < 20) newWidth = 20;
 

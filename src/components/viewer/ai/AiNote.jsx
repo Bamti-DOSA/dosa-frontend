@@ -20,19 +20,15 @@ const AiNote = ({ onClose, onMaximize, messages, setMessages }) => {
 
   // --- 드래그 핸들러 ---
   const handleMouseDown = (e) => {
-    // input이나 button 등 내부 요소를 클릭했을 때는 드래그 시작 안 함
     if (e.target.closest('input') || e.target.closest('button')) return;
     e.preventDefault();
     setIsDragging(true);
 
     if (isExpanded) {
         setIsExpanded(false);
-        // 마우스 위치에 맞춰 모달이 따라오도록 오프셋 재계산 (중앙 잡기 등)
-        // 여기서는 간단히 현재 마우스 위치 기준으로 계산
         const currentX = e.clientX;
         const currentY = e.clientY;
-        // 드래그 시작 시 모달의 상단 중앙을 잡은 것처럼 위치 보정
-        dragOffset.current = { x: 180, y: 24 }; // 360px의 절반, 헤더 높이의 절반
+        dragOffset.current = { x: 180, y: 24 }; 
         setPosition({ x: currentX - 180, y: currentY - 24 });
     } else {
         const rect = noteRef.current.getBoundingClientRect();
@@ -103,7 +99,7 @@ const AiNote = ({ onClose, onMaximize, messages, setMessages }) => {
     setInputValue("");
     setSelectedItem(null); // 전송 후 초기화
 
-    // (임시) AI 응답 시뮬레이션
+    // AI 응답 시뮬레이션
     setTimeout(() => {
         setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', text: "네, 확인했습니다. 해당 내용과 자료를 바탕으로 도와드릴까요?" }]);
     }, 1000);
@@ -115,19 +111,19 @@ const AiNote = ({ onClose, onMaximize, messages, setMessages }) => {
       style={
         isExpanded 
         ? { 
-            // ✅ 확장 상태 (도킹 모드) - 부모(RightContainer) 기준 꽉 채우기
-            position: 'absolute', // fixed -> absolute 변경
+            // 확장 상태 (도킹 모드) - 부모(RightContainer) 기준 꽉 채우기
+            position: 'absolute', 
             top: 0, 
             left: 'auto',
             right: 0,
-            height: '100%', // 높이 100%
-            borderRadius: '0px', // 모서리 제거하여 딱 붙임
-            border: 'none',      // 테두리 제거 (선택사항)
-            zIndex: 50,          // 적절한 레이어 순서
+            height: '100%',
+            borderRadius: '0px',
+            border: 'none',     
+            zIndex: 50,         
             transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)' 
           }
         : { 
-            // ✅ 플로팅 상태 (기본 모드)
+            // 플로팅 상태 (기본 모드)
             left: `${position.x}px`, 
             top: `${position.y}px`, 
             height: '500px', 
