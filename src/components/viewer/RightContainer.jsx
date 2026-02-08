@@ -5,11 +5,12 @@ import NoteItemList from "./note/NoteItemList";
 import NoteFull from "./note/NoteFull";
 import AssistantAi from "./ai/AssistantAi";
 import AiMenu from "./ai/AiMenu";
-import { 
-  getNotesByModelId, 
-  createNote, 
-  updateNote, 
-  deleteNote 
+import { saveMemo } from "../../api/aiDB";
+import {
+  getNotesByModelId,
+  createNote,
+  updateNote,
+  deleteNote,
 } from "../../utils/noteDB";
 
 const parseDate = (dateStr) => {
@@ -17,8 +18,18 @@ const parseDate = (dateStr) => {
   const day = parseInt(dayPart.replace(".", ""), 10);
   const [hours, minutes] = timePart.split(":").map(Number);
   const monthMap = {
-    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
-    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
   };
   const now = new Date();
   return new Date(now.getFullYear(), monthMap[monthStr], day, hours, minutes);
@@ -26,7 +37,20 @@ const parseDate = (dateStr) => {
 
 const getFormattedDate = () => {
   const now = new Date();
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   return `${now.getDate()}. ${months[now.getMonth()]} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 };
 
@@ -86,7 +110,7 @@ const RightContainer = ({
 
   const handleSaveNote = async (noteData) => {
     const dateStr = getFormattedDate();
-    
+
     if (editingNote) {
       const success = await updateNote(editingNote.id, {
         title: noteData.title || "제목 없음",
@@ -95,7 +119,7 @@ const RightContainer = ({
         type: noteData.type,
         attachments: noteData.attachments || [],
       });
-      
+
       if (success) {
         await loadNotes();
       }
@@ -108,12 +132,14 @@ const RightContainer = ({
         type: noteData.type,
         attachments: noteData.attachments || [],
       });
-      
+
+      await saveMemo(modelId, noteData.content);
+
       if (newNote) {
         await loadNotes();
       }
     }
-    
+
     setIsAdding(false);
   };
 
@@ -137,11 +163,11 @@ const RightContainer = ({
 
   const handleDeleteConfirm = async () => {
     const success = await deleteNote(deletingNoteId);
-    
+
     if (success) {
       await loadNotes();
     }
-    
+
     setDeletingNoteId(null);
     setExpandedNoteId(null);
   };
