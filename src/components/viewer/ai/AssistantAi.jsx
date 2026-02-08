@@ -209,12 +209,12 @@ const AssistantAi = ({
             placeholder={
               !modelName ? "모델 정보를 불러오는 중..." : "메시지를 입력하세요."
             }
-            className="flex-1 p-2 rounded-lg"
+            className="outline-none flex-1 p-2 rounded-lg b-16-med"
           />
           <button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isLoading}
-            className="p-2 rounded-full text-white bg-main-1 disabled:bg-gray-300"
+            className="p-2 rounded-full text-white bg-main-1 hover:bg-bg-1 hover:text-main-1 disabled:bg-gray-300"
           >
             <ArrowUp size={20} />
           </button>
