@@ -1,6 +1,6 @@
 import { getAssemblyModelSignedUrl } from '../api/modelAPI';
 
-// 👇 Machine Vice 파일명 매핑 (개별 부품만)
+// Machine Vice 파일명 매핑 (개별 부품만)
 const MACHINE_VICE_FILE_MAP = {
   'part_1_fuhrung': 'Part1 Fuhrung.glb',
   'part_2_feste_backe': 'Part2 Feste Backe.glb',
@@ -12,7 +12,7 @@ const MACHINE_VICE_FILE_MAP = {
   'part_8_grundplatte': 'Part8-grundplatte.glb',
 };
 
-// 👇 Drone 파일명 매핑 (개별 부품만)
+// Drone 파일명 매핑 (개별 부품만)
 const DRONE_FILE_MAP = {
   'arm_gear': 'Arm gear.glb',
   'beater_disc': 'Beater disc.glb',
@@ -26,7 +26,7 @@ const DRONE_FILE_MAP = {
   'xyz': 'xyz.glb',
 };
 
-// 👇 Suspension 파일명 매핑
+// Suspension 파일명 매핑
 const SUSPENSION_FILE_MAP = {
   'base': 'base.glb',
   'nut': 'nut.glb',
@@ -34,7 +34,7 @@ const SUSPENSION_FILE_MAP = {
   'spring': 'spring.glb',
 };
 
-// 👇 V4 Engine 파일 매핑 추가
+// V4 Engine 파일 매핑 추가
 const V4_ENGINE_FILE_MAP = {
   'connecting_rod_cap': 'Connecting Rod Cap.glb',
   'connecting_rod': 'Connecting Rod.glb',
@@ -50,7 +50,7 @@ export const FILE_MAP_BY_MODEL = {
   'Drone': DRONE_FILE_MAP,
   'Suspension': SUSPENSION_FILE_MAP,
   'Machine Vice': MACHINE_VICE_FILE_MAP,
-  'V4 Engine': V4_ENGINE_FILE_MAP, // 👈 추가
+  'V4 Engine': V4_ENGINE_FILE_MAP,
 };
 
 /**
@@ -66,33 +66,30 @@ export const mapModelData = async (apiData) => {
 
   const result = [];
 
-  // 👇 1. 완성본 추가 (Pre-signed URL 요청)
+  // 1. 완성본 추가 (Pre-signed URL 요청)
   if (assemblyModelUrl) {
     try {
       const signedUrl = await getAssemblyModelSignedUrl(assemblyModelUrl);
       
       if (signedUrl) {
-        console.log('🔧 Assembly signed URL:', signedUrl);
         
         result.push({
           id: 'assembly',
           name: '전체 조립품',
           description: '모든 부품이 조립된 완성 모델입니다.',
-          model: signedUrl, // 👈 S3 Pre-signed URL
+          model: signedUrl, 
           meshName: 'assembly',
           isAssembly: true,
         });
       } else {
-        console.warn('⚠️ Signed URL을 받지 못했습니다.');
+        console.warn("완성본 URL을 가져오지 못했습니다.");
       }
     } catch (error) {
-      console.error('❌ Assembly URL 처리 실패:', error);
-    }
+      console.error("완성본 URL 가져오기 실패:", error);}
   }
 
-  // 👇 2. 개별 부품 추가 (로컬 파일)
+  // 2. 개별 부품 추가 (로컬 파일)
   if (!fileMap) {
-    console.warn(`⚠️ "${name}" 모델의 파일 매핑이 없습니다.`);
     
     if (parts && parts.length > 0) {
       parts.forEach((part, index) => {
@@ -116,7 +113,7 @@ export const mapModelData = async (apiData) => {
       const fileName = fileMap[part.meshName];
       
       if (!fileName) {
-        console.warn(`⚠️ 파일명 매핑 없음: ${part.meshName} (${name})`);
+        console.warn(`파일명 매핑 없음: ${part.meshName} (${name})`);
       }
       
       const encodedPath = fileName 

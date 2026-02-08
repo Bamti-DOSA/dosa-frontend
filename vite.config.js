@@ -7,4 +7,8 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  esbuild: {
+    jsxFactory: "React.createElement",
+    jsxFragment: "React.Fragment",
+  },
 });
