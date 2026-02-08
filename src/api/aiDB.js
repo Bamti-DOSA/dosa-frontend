@@ -52,3 +52,28 @@ export const getLastChatId = async () => {
   if (allChats.length === 0) return 0;
   return Math.max(...allChats.map((c) => c.chatId));
 };
+
+// 특정 채팅방의 메시지 내역만 업데이트하는 함수
+export const updateChatMessages = async (chatId, newMessages) => {
+  const db = await initDB();
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+
+  // 1. 기존 데이터 가져오기
+  const chat = await store.get(Number(chatId));
+  if (!chat) {
+    console.error(`❌ 업데이트 실패: ID ${chatId} 채팅방을 찾을 수 없습니다.`);
+    return;
+  }
+
+  // 2. 메시지 교체 및 시간 업데이트
+  chat.messages = newMessages;
+  chat.lastUpdated = Date.now();
+
+  // 3. 다시 저장
+  await store.put(chat);
+  await tx.done;
+  console.log(
+    `✅ DB 업데이트 성공: Chat ${chatId} (메시지 ${newMessages.length}개)`,
+  );
+};

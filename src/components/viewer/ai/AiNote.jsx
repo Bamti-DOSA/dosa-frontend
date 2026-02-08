@@ -1,25 +1,80 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, MessageSquare, Minimize2, ArrowUp, Maximize2, Camera, FolderPlus, Link as LinkIcon, Plus } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { X, Minimize2, Maximize2 } from "lucide-react";
+import AssistantAi from "../ai/AssistantAi";
+import { getLastChatId, saveChat } from "../../../api/aiDB";
+import { getModelById } from "../../../api/modelAPI";
+import { formatSystemName } from "../../../utils/formatModelName";
 
-const AiNote = ({ onClose, onMaximize, messages, setMessages }) => {
-  // 화면 위치 상태
-  const [position, setPosition] = useState({ x: window.innerWidth / 2 - 180, y: window.innerHeight / 2 - 250 });
+const AiNote = ({ onClose, onMaximize, modelId }) => {
+  const [position, setPosition] = useState({
+    x: window.innerWidth / 2 - 190,
+    y: window.innerHeight / 2 - 270,
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // 상태 초기화
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [modelName, setModelName] = useState("");
+  const [isReady, setIsReady] = useState(false);
+
   const dragOffset = useRef({ x: 0, y: 0 });
   const noteRef = useRef(null);
-  
-  // 입력 및 첨부파일 상태
-  const [inputValue, setInputValue] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
 
-  // 파일 input Refs
-  const imageInputRef = useRef(null);
-  const fileInputRef = useRef(null);
+  // 🚀 세션 생성 로직 최적화
+  useEffect(() => {
+    const initSession = async () => {
+      if (!modelId) return;
 
-  // --- 드래그 핸들러 ---
+      try {
+        setIsReady(false);
+
+        // 1. 💡 모델 ID로 직접 모델 이름 찾기 (가져오신 로직 활용)
+        const currentModel = await getModelById(modelId);
+        let formattedName = "";
+
+        if (currentModel && currentModel.name) {
+          formattedName = formatSystemName(currentModel.name);
+          setModelName(formattedName);
+          console.log("✅ AiNote - 모델명 설정 완료:", formattedName);
+        }
+
+        // 2. 새 세션 생성
+        const lastId = await getLastChatId();
+        const newId = (Number(lastId) || 0) + 1;
+
+        const initialMsg = [
+          {
+            id: Date.now(),
+            role: "assistant",
+            content: `안녕하세요! ${formattedName || "제품"}에 대해 무엇을 도와드릴까요?`,
+          },
+        ];
+
+        await saveChat({
+          chatId: newId,
+          modelId: String(modelId),
+          messages: initialMsg,
+          lastUpdated: Date.now(),
+        });
+
+        setCurrentChatId(newId);
+        setIsReady(true);
+      } catch (err) {
+        console.error("AiNote 초기화 실패:", err);
+        setIsReady(true); // 에러 발생 시에도 로딩은 풀어줌
+      }
+    };
+
+    initSession();
+  }, [modelId]);
+
+  // 드래그 로직 (생략 - 기존과 동일)
   const handleMouseDown = (e) => {
+    if (e.target.closest("button") || e.target.closest("input")) return;
+    setIsDragging(true);
+    const rect = noteRef.current.getBoundingClientRect();
+    dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     if (e.target.closest('input') || e.target.closest('button')) return;
     e.preventDefault();
     setIsDragging(true);
@@ -39,242 +94,99 @@ const AiNote = ({ onClose, onMaximize, messages, setMessages }) => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isDragging) return;
-      setPosition({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y });
+      setPosition({
+        x: e.clientX - dragOffset.current.x,
+        y: e.clientY - dragOffset.current.y,
+      });
     };
 
     const handleMouseUp = (e) => {
       if (!isDragging) return;
       setIsDragging(false);
 
+      // 💡 화면의 오른쪽 70% 영역을 넘어가면 도킹(최대화) 실행
       const dockThreshold = window.innerWidth * 0.7;
       if (e.clientX > dockThreshold) {
-        onMaximize(); // 부모 컴포넌트의 AI 탭 전환 함수 실행
+        // 현재 나눈 대화방 ID를 함께 넘겨주어 연속성을 유지합니다.
+        onMaximize(currentChatId);
       }
     };
 
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     }
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, onMaximize]);
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  // --- 파일 첨부 핸들러 ---
-  const handleFileChange = (e, type) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedItem({ type, name: file.name, file });
-      setIsMenuOpen(false);
-    }
-  };
-
-  const handleLinkAdd = () => {
-    const url = window.prompt("URL 주소를 입력해주세요:");
-    if (url) {
-      setSelectedItem({ type: "link", name: url });
-      setIsMenuOpen(false);
-    }
-  };
-
-  // --- 메시지 전송 핸들러 ---
-  const handleSendMessage = () => {
-    if (!inputValue.trim() && !selectedItem) return;
-    
-    // 사용자 메시지 추가 (첨부파일 포함)
-    const newMsg = { 
-        id: Date.now(), 
-        role: 'user', 
-        text: inputValue,
-        attachment: selectedItem 
-    };
-
-    setMessages(prev => [...prev, newMsg]);
-    setInputValue("");
-    setSelectedItem(null); // 전송 후 초기화
-
-    // AI 응답 시뮬레이션
-    setTimeout(() => {
-        setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', text: "네, 확인했습니다. 해당 내용과 자료를 바탕으로 도와드릴까요?" }]);
-    }, 1000);
-  };
+  }, [isDragging, currentChatId, onMaximize]);
 
   return (
-    <div 
+    <div
       ref={noteRef}
       style={
-        isExpanded 
-        ? { 
-            // 확장 상태 (도킹 모드) - 부모(RightContainer) 기준 꽉 채우기
-            position: 'absolute', 
-            top: 0, 
-            left: 'auto',
-            right: 0,
-            height: '100%',
-            borderRadius: '0px',
-            border: 'none',     
-            zIndex: 50,         
-            transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)' 
-          }
-        : { 
-            // 플로팅 상태 (기본 모드)
-            left: `${position.x}px`, 
-            top: `${position.y}px`, 
-            height: '500px', 
-            width: '360px',
-            borderRadius: '16px',
-            transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
-          }
+        isExpanded
+          ? {
+              position: "absolute",
+              top: 0,
+              right: 0,
+              height: "100%",
+              width: "380px",
+              zIndex: 9999,
+            }
+          : {
+              position: "fixed",
+              left: `${position.x}px`,
+              top: `${position.y}px`,
+              height: "540px",
+              width: "380px",
+              borderRadius: "16px",
+              zIndex: 9999,
+            }
       }
-      className="fixed w-[360px] h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-[9999] flex flex-col overflow-hidden animate-scale-in"
+      className="bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-scale-in"
     >
-      {/* 1. 헤더 (드래그 영역) */}
-      <div 
+      <div
         onMouseDown={handleMouseDown}
-        className="h-12 bg-white flex justify-between items-center px-4 cursor-move shrink-0 select-none"
+        className="h-12 bg-white flex justify-between items-center px-4 cursor-move border-b shrink-0"
       >
-        <div className="flex items-center gap-2 text-[#232323]">
-          <span className="font-bold text-sm">AI 어시스턴트</span>
-        </div>
-        <div className="flex items-center gap-2">
-           <button 
-             onClick={toggleExpand}
-             className="text-gray-400 hover:text-[#232323] p-1 rounded transition-colors"
-             title={isExpanded ? "축소하기" : "위아래로 확장하기"}
-           >
-             {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-           </button>
-           <button 
-             onClick={onClose}
-             className="text-gray-400 hover:text-[#232323] p-1  rounded"
-           >
-             <X size={16} />
-           </button>
+        <span className="font-bold text-[14px] text-gray-800">
+          AI 어시스턴트
+        </span>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1.5 text-gray-400 hover:text-black transition-colors"
+          >
+            {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-gray-400 hover:text-black"
+          >
+            <X size={16} />
+          </button>
         </div>
       </div>
 
-      {/* 2. 채팅 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 bg-white no-scrollbar flex flex-col gap-3">
-        <div className="flex gap-3">
-            <div className="bg-white p-3 rounded-2xl rounded-tl-none text-gray-900 border border-bg-1 leading-relaxed max-w-[80%]">
-                안녕하세요! 궁금한 점이 있으신가요?
-            </div>
-        </div>
-
-        {messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`p-3 rounded-2xl text-sm leading-relaxed max-w-[80%] flex flex-col gap-2 ${
-                    msg.role === 'user' 
-                    ? 'bg-bg-2 text-gray-900 rounded-tr-none' 
-                    : 'bg-white text-gray-900 border border-bg-1 rounded-tl-none'
-                }`}>
-                    {/* 텍스트 내용 */}
-                    {msg.text && <span>{msg.text}</span>}
-                    
-                    {/* 첨부파일 표시 */}
-                    {msg.attachment && (
-                        <div className={`text-[10px] flex items-center gap-1 p-1 rounded ${msg.role === 'user' ? 'bg-white/20' : 'bg-gray-200'}`}>
-                            {msg.attachment.type === 'link' ? '🔗' : '📁'} {msg.attachment.name}
-                        </div>
-                    )}
-                </div>
-            </div>
-        ))}
+      <div className="flex-1 overflow-hidden relative bg-white">
+        {!isReady ? (
+          <div className="h-full flex flex-col items-center justify-center gap-2">
+            <div className="w-5 h-5 border-2 border-main-1 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-400 text-[12px]">
+              대화를 준비하고 있습니다...
+            </p>
+          </div>
+        ) : (
+          <AssistantAi
+            modelId={modelId}
+            modelName={modelName}
+            currentChatId={currentChatId}
+            setCurrentChatId={setCurrentChatId}
+          />
+        )}
       </div>
-
-      {/* 3. 입력창 영역 (위쪽 UI 스타일: 하단 마진, 회색 알약 모양 입력바) */}
-            <div className="bg-white relative m-[25px] shrink-0">
-              
-              {/* 선택된 파일 미리보기 (입력창 위) */}
-              {selectedItem && (
-                <div className="absolute bottom-full left-5 mb-2 flex items-center gap-2 bg-gray-800 text-white px-3 py-1.5 rounded-full text-xs animate-in fade-in slide-in-from-bottom-1">
-                  <span>
-                    {selectedItem.type === "link" ? <img src={IconPaperClip} alt="link icon" className="w-3 h-3" /> : '📁'} {selectedItem.name}
-                  </span>
-                  <button
-                    onClick={() => setSelectedItem(null)}
-                    className="ml-1 hover:text-red-400"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              )}
-      
-              {/* 숨겨진 파일 인풋 */}
-              <input
-                type="file"
-                accept="image/*"
-                ref={imageInputRef}
-                className="hidden"
-                onChange={(e) => handleFileChange(e, "image")}
-              />
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={(e) => handleFileChange(e, "file")}
-              />
-      
-              {/* 플러스 메뉴 팝업 (위쪽 UI 위치 및 스타일) */}
-              {isMenuOpen && (
-                <div className="absolute bottom-[60px] left-0 bg-white rounded-2xl shadow-md border border-gray-100 p-[12px] min-w-[180px] z-50 animate-in fade-in slide-in-from-bottom-2">
-                  <button
-                    onClick={() => imageInputRef.current.click()}
-                    className="flex items-center gap-[13px] w-full p-2.5 hover:bg-bg-2 rounded-xl text-sm text-[#949393] transition-colors"
-                  >
-                    <Camera size={20} />
-                    <div className="whitespace-nowrap">사진 첨부</div>
-                  </button>
-                  <button
-                    onClick={() => fileInputRef.current.click()}
-                    className="flex items-center gap-[13px] w-full p-2.5 hover:bg-bg-2 rounded-xl text-sm text-[#949393] transition-colors"
-                  >
-                    <FolderPlus size={20} />
-                    <div className="whitespace-nowrap">파일 첨부</div>
-                  </button>
-                  <button
-                    onClick={handleLinkAdd}
-                    className="flex items-center gap-[13px] w-full p-2.5 hover:bg-bg-2 rounded-xl text-sm text-[#949393] transition-colors"
-                  >
-                    <img src={IconPaperClip} alt="link icon" className="w-5 h-5" />
-                    <div className="whitespace-nowrap">링크 첨부</div>
-                  </button>
-                </div>
-              )}
-      
-              {/* 입력 바 (위쪽 UI: 회색 알약 모양) */}
-              <div className="flex items-center gap-2 bg-gray-100 rounded-full pr-2 pl-4 py-2">
-                <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className={`transition-transform duration-200 ${isMenuOpen ? "rotate-45" : ""}`}
-                >
-                  <Plus size={24} className="text-gray-500" />
-                </button>
-                
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="메시지를 입력하세요..."
-                  className="flex-1 bg-transparent outline-none text-sm py-2 text-gray-700"
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                />
-                
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim()}
-                  className={`p-2 rounded-full text-white transition-colors bg-main-1`}
-                >
-                  <ArrowUp size={20} strokeWidth={2.5} />
-                </button>
-              </div>
-            </div>  
     </div>
   );
 };

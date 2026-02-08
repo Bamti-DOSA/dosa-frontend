@@ -49,24 +49,33 @@ const AssistantAi = ({
   useEffect(() => {
     const loadSession = async () => {
       setIsDbLoading(true);
-      const savedChats = await getChatsByModel(modelId);
+      try {
+        const savedChats = await getChatsByModel(modelId);
 
-      if (currentChatId) {
-        // 부모가 지정한 특정 채팅방 로드
-        const target = savedChats.find((c) => c.chatId === currentChatId);
-        if (target) setMessages(target.messages);
-      } else if (savedChats.length > 0) {
-        // 처음 진입 시 가장 최근 대화 자동 선택
-        const lastSession = savedChats.sort(
-          (a, b) => b.lastUpdated - a.lastUpdated,
-        )[0];
-        setCurrentChatId(lastSession.chatId);
-        setMessages(lastSession.messages);
-      } else {
-        // 아예 내역 없으면 새 채팅 생성
-        await createNewInitialChat();
+        if (currentChatId) {
+          // 💡 부모(AiNote)가 준 ID가 DB에 있는지 확인
+          const target = savedChats.find((c) => c.chatId === currentChatId);
+          if (target) {
+            setMessages(target.messages);
+          } else {
+            // 💡 ID는 있지만 DB에 아직 없다면(방금 생성된 경우), 빈 배열로 시작
+            setMessages([]);
+          }
+        } else if (savedChats.length > 0) {
+          const lastSession = savedChats.sort(
+            (a, b) => b.lastUpdated - a.lastUpdated,
+          )[0];
+          setCurrentChatId(lastSession.chatId);
+          setMessages(lastSession.messages);
+        } else {
+          await createNewInitialChat();
+        }
+      } catch (error) {
+        console.error("세션 로드 중 에러:", error);
+      } finally {
+        // ✅ 어떤 경우에도 로딩 상태를 해제하여 화면을 보여줌
+        setIsDbLoading(false);
       }
-      setIsDbLoading(false);
     };
 
     if (modelId) loadSession();

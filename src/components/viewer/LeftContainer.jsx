@@ -139,6 +139,7 @@ const LeftContainer = ({
           onMaximize={onMaximize}
           messages={floatingMessages}
           setMessages={setFloatingMessages}
+          modelId={modelId}
         />
       )}
 
