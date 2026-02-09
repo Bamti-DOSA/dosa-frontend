@@ -371,7 +371,7 @@ const LeftContainer = ({
                     /* 💡 shadows가 false면 그림자가 생성되지 않음 */
                     shadows={isLightOn ? "contact" : false}
                     contactShadow={false}
-                    adjustCamera={false}
+                    adjustCamera={true}
                   >
                     <Center>
                       <AnimationPlayer
