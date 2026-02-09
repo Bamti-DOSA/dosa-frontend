@@ -8,11 +8,12 @@ function AnimationPlayer({
   totalFrames,
   selectedPartMesh,
   overrideMaterial,
+  onPositionUpdate,
 }) {
   const gltf = useGLTF(url);
   const mixerRef = useRef(null);
   const actionsRef = useRef([]);
-  const trueOriginalsRef = useRef(new Map()); // 모델의 순수 원본 재질 보관함
+  const trueOriginalsRef = useRef(new Map());
   const [availableMeshes, setAvailableMeshes] = useState([]);
 
   // 1. 초기 로드: 원본 재질을 영구 보관하고 각 메쉬를 독립화합니다.
@@ -24,12 +25,10 @@ function AnimationPlayer({
       if (child.isMesh) {
         meshNames.push(child.name);
 
-        // 처음 로드될 때 딱 한 번만 진짜 원본 재질(백지 상태)을 저장합니다.
         if (!trueOriginalsRef.current.has(child)) {
           trueOriginalsRef.current.set(child, child.material.clone());
         }
 
-        // 각 메쉬의 재질을 독립적으로 클론하여 다른 부품에 영향이 없도록 합니다.
         child.material = child.material.clone();
       }
     });
@@ -52,19 +51,16 @@ function AnimationPlayer({
     };
   }, [gltf]);
 
-  // 2. 통합 로직: 하얀색(원본) -> 파란색(선택) -> 재질(적용) 흐름 제어
-  // ⚪ 단계 1: 아무런 질감 없는 '완전 회색' 적용 (백지 상태)
   const applyDefaultGrey = (mat) => {
-    mat.color.set("#bbbbbb"); // 부드러운 중간 회색
+    mat.color.set("#bbbbbb");
     mat.emissive.set("#000000");
     mat.emissiveIntensity = 0;
-    mat.metalness = 0; // 금속 광택 제거
-    mat.roughness = 0.8; // 매끄러운 무광 질감
-    mat.map = null; // API/모델에 심긴 텍스처 맵 제거
+    mat.metalness = 0;
+    mat.roughness = 0.8;
+    mat.map = null;
     mat.normalMap = null;
   };
 
-  // 🔵 단계 2: 파란색 강조 (선택됨)
   const applyBlueHighlight = (mat) => {
     mat.color.set("#aaddff");
     mat.emissive.set("#4ba3ff");
@@ -73,7 +69,6 @@ function AnimationPlayer({
     mat.roughness = 0.2;
   };
 
-  // 🎨 단계 3: 선택한 재질 적용
   const applyPropsToMaterial = (mat, props) => {
     if (props.color) mat.color.set(props.color);
     if (props.metalness !== undefined) mat.metalness = props.metalness;
@@ -91,22 +86,18 @@ function AnimationPlayer({
         const isTarget = selectedPartMesh
           ? isNameMatch(child.name, selectedPartMesh)
           : false;
-        const originalMat = trueOriginalsRef.current.get(child);
 
         if (selectedPartMesh) {
           if (isTarget) {
-            // 💡 재질 데이터가 있으면 재질 적용, 없으면(기본재질 선택 시) 파란색으로!
             if (overrideMaterial) {
               applyPropsToMaterial(child.material, overrideMaterial);
             } else {
               applyBlueHighlight(child.material);
             }
           } else {
-            // 선택되지 않은 부품은 무조건 '완전 회색'
             applyDefaultGrey(child.material);
           }
         } else {
-          // 전체 모델 모드
           if (overrideMaterial) {
             applyPropsToMaterial(child.material, overrideMaterial);
           } else {
@@ -118,7 +109,7 @@ function AnimationPlayer({
     });
   }, [selectedPartMesh, overrideMaterial, gltf.scene]);
 
-  // 3. 애니메이션 프레임 제어 (기존 유지)
+  // 3. 애니메이션 프레임 제어 + ✅ 4단계: 위치 업데이트
   useEffect(() => {
     if (!mixerRef.current || actionsRef.current.length === 0) return;
 
@@ -129,29 +120,27 @@ function AnimationPlayer({
       action.paused = true;
     });
     mixerRef.current.update(0);
-  }, [currentFrame, totalFrames]);
 
-  // --- 헬퍼 함수 정의 ---
+    // ✅ 4단계: 애니메이션 후 모든 메쉬의 중심 좌표 계산 및 콜백 호출
+    if (onPositionUpdate && currentFrame > 0) {
+      gltf.scene.traverse((child) => {
+        if (child.isMesh) {
+          // 각 메쉬의 월드 위치에서 Bounding Box 중심 계산
+          child.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(child);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
 
-  // 파란색 강조 적용
-  // const applyBlueHighlight = (mat) => {
-  //   mat.color.set(0xaaddff);
-  //   mat.emissive.set(0x4ba3ff);
-  //   mat.emissiveIntensity = 0.8;
-  //   mat.metalness = 0.5;
-  //   mat.roughness = 0.2;
-  // };
-
-  // // 재질 속성 적용 및 강조 광택 제거
-  // const applyPropsToMaterial = (mat, props) => {
-  //   if (props.color) mat.color.set(props.color);
-  //   if (props.metalness !== undefined) mat.metalness = props.metalness;
-  //   if (props.roughness !== undefined) mat.roughness = props.roughness;
-
-  //   // 재질이 적용되면 파란색 발광(emissive) 효과를 끕니다.
-  //   mat.emissive.set(0x000000);
-  //   mat.emissiveIntensity = 0;
-  // };
+          // 콜백으로 메쉬 이름과 중심 좌표 전달
+          onPositionUpdate(child.name, {
+            x: center.x,
+            y: center.y,
+            z: center.z,
+          });
+        }
+      });
+    }
+  }, [currentFrame, totalFrames, onPositionUpdate, gltf.scene]);
 
   // 이름 매칭 로직
   const isNameMatch = (meshName, searchName) => {

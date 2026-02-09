@@ -123,6 +123,12 @@ const LeftContainer = ({
 
   const [activeMaterial, setActiveMaterial] = useState(null);
   const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0, z: 0 });
+  
+  // ✅ 4단계: 기본 중심 좌표를 저장할 state 추가
+  const [basePosition, setBasePosition] = useState({ x: 0, y: 0, z: 0 });
+  
+  // ✅ 4단계: 슬라이딩 된 좌표를 저장할 state 추가
+  const [animatedPositions, setAnimatedPositions] = useState({});
 
   const [briefingData, setBriefingData] = useState(null);
   useEffect(() => {
@@ -186,18 +192,23 @@ const LeftContainer = ({
     console.log('🎯 부품 선택:', partId);
     setSelectedId(partId);
 
-    // 선택된 부품 찾기
     const selectedPart = transformedParts.find(p => p.id === partId);
     
     if (selectedPart && selectedPart.model) {
       console.log('📍 선택된 부품의 중심 좌표 계산 시작:', selectedPart.name);
       
-      // 부품의 중심 좌표 계산
-      const center = await calculateModelCenter(selectedPart.model);
-      console.log('✅ 선택된 부품 중심 좌표:', center);
-      
-      // 좌표 업데이트
-      setCurrentPosition(center);
+      // ✅ 4단계: 슬라이딩 된 좌표가 있으면 그것을 사용, 없으면 계산
+      if (currentFrame > 0 && animatedPositions[selectedPart.meshName]) {
+        // 슬라이딩 된 좌표 사용
+        const animatedPos = animatedPositions[selectedPart.meshName];
+        console.log('🎬 슬라이딩 된 좌표 사용:', animatedPos);
+        setCurrentPosition(animatedPos);
+      } else {
+        // 기본 중심 좌표 계산
+        const center = await calculateModelCenter(selectedPart.model);
+        console.log('✅ 선택된 부품 중심 좌표:', center);
+        setCurrentPosition(center);
+      }
     } else {
       console.warn('⚠️ 선택된 부품에 model 경로가 없습니다');
     }
@@ -206,6 +217,19 @@ const LeftContainer = ({
   const handleMaterialSelect = (materialProps) => {
     setActiveMaterial(materialProps);
   };
+
+  // ✅ 4단계: currentFrame이 변경될 때 현재 선택된 부품의 슬라이딩 좌표 업데이트
+  useEffect(() => {
+    if (currentPart && !currentPart.isAssembly && currentFrame > 0) {
+      // AnimationPlayer로부터 현재 부품의 위치를 가져와야 함
+      // 이 부분은 AnimationPlayer가 위치 정보를 제공하는 방식에 따라 달라짐
+      console.log('🎬 프레임 변경됨:', currentFrame, '부품:', currentPart.meshName);
+    } else if (currentFrame === 0 && currentPart) {
+      // 슬라이더가 0으로 리셋되면 기본 좌표로 복원
+      setCurrentPosition(basePosition);
+      console.log('🔄 기본 좌표로 복원:', basePosition);
+    }
+  }, [currentFrame, currentPart]);
 
   // ✅ 부품 데이터 로드 및 기본 좌표 설정
   useEffect(() => {
@@ -217,19 +241,18 @@ const LeftContainer = ({
       
       setTransformedParts(mapped);
 
-      // 조립품을 기본 선택으로 설정
       const assemblyPart = mapped.find(p => p.isAssembly);
       
       if (assemblyPart && !selectedId) {
         console.log('🎯 조립품 발견:', assemblyPart);
         setSelectedId(assemblyPart.id);
         
-        // 조립품의 중심 좌표 계산
         if (assemblyPart.model) {
           console.log('📍 조립품 중심 좌표 계산 시작...');
           const center = await calculateModelCenter(assemblyPart.model);
           console.log('✅ 조립품 중심 좌표:', center);
           setCurrentPosition(center);
+          setBasePosition(center); // ✅ 4단계: 기본 좌표 저장
         } else {
           console.warn('⚠️ 조립품에 model 경로가 없습니다');
         }
@@ -237,12 +260,12 @@ const LeftContainer = ({
         console.log('🎯 첫 번째 부품 선택:', mapped[0]);
         setSelectedId(mapped[0].id);
         
-        // 첫 번째 부품의 중심 좌표 계산
         if (mapped[0].model) {
           console.log('📍 첫 번째 부품 중심 좌표 계산 시작...');
           const center = await calculateModelCenter(mapped[0].model);
           console.log('✅ 첫 번째 부품 중심 좌표:', center);
           setCurrentPosition(center);
+          setBasePosition(center); // ✅ 4단계: 기본 좌표 저장
         } else {
           console.warn('⚠️ 첫 번째 부품에 model 경로가 없습니다');
         }
@@ -280,7 +303,6 @@ const LeftContainer = ({
 
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <div className="flex-[7.5] bg-white rounded-2xl relative overflow-hidden flex flex-col">
-          {/* AiBriefing (왼쪽 하단) */}
           {showBriefing && (
             <AiBriefing
               className="absolute left-4 bottom-20 z-50"
@@ -289,7 +311,6 @@ const LeftContainer = ({
             />
           )}
 
-          {/* CoordinateDisplay */}
           <CoordinateDisplay 
             position={currentPosition}
             className="absolute right-4 bottom-20 z-50"
@@ -324,6 +345,17 @@ const LeftContainer = ({
                           currentPart?.isAssembly ? null : currentPart?.meshName
                         }
                         overrideMaterial={activeMaterial}
+                        // ✅ 4단계: 애니메이션 위치 업데이트 콜백 추가
+                        onPositionUpdate={(meshName, position) => {
+                          if (currentPart?.meshName === meshName) {
+                            console.log('🎬 슬라이딩 좌표 업데이트:', meshName, position);
+                            setCurrentPosition(position);
+                          }
+                          setAnimatedPositions(prev => ({
+                            ...prev,
+                            [meshName]: position
+                          }));
+                        }}
                       />
                     </Center>
                   </Stage>
