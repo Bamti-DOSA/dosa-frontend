@@ -98,37 +98,60 @@ const LeftContainer = ({
   const [briefingData, setBriefingData] = useState(null);
   useEffect(() => {
     const loadBriefing = async () => {
-      if (!modelId) return;
+      if (!modelId || briefingData) return; // 이미 데이터가 있으면 중단
+
       try {
+        // 1. 해당 모델의 모든 채팅 내역 가져오기
         const modelChats = await getChatsByModel(String(modelId));
         if (!modelChats || modelChats.length === 0) return;
 
-        const offset = new Date().getTimezoneOffset() * 60000;
-        const today = new Date(Date.now() - offset).toISOString().split("T")[0];
+        // 2. 최근 순으로 채팅 정렬
+        const sortedChats = [...modelChats].sort(
+          (a, b) => b.lastUpdated - a.lastUpdated,
+        );
 
-        const todaysChats = modelChats.filter((chat) => {
-          if (!chat.lastUpdated) return false;
-          const chatDate = new Date(chat.lastUpdated - offset)
-            .toISOString()
-            .split("T")[0];
-          return chatDate === today;
+        // 3. 모든 메시지를 하나로 합치기
+        const allMessages = sortedChats.reduce((acc, chat) => {
+          return [...acc, ...(chat.messages || [])];
+        }, []);
+
+        // 4. ✨ 의미 있는 메시지 필터링 (단순 인사 제외)
+        const meaningfulMessages = allMessages.filter((msg) => {
+          const content = msg.content || msg.text || "";
+          const trimmed = content.trim();
+
+          // 조건 A: 글자 수가 5자 이상 (너무 짧은 "네", "아니오", "안녕" 제외)
+          const isLongEnough = trimmed.length >= 5;
+
+          // 조건 B: 단순 인사말 패턴 제외
+          const isNotGreeting =
+            !/^(안녕|안녕하세요|반가워|ㅎㅇ|hi|hello|반갑다)/i.test(trimmed);
+
+          return isLongEnough && isNotGreeting;
         });
 
-        const combinedMessages = todaysChats
-          .slice(-3)
-          .reduce((acc, chat) => [...acc, ...(chat.messages || [])], []);
+        console.log(
+          `📊 [모델 ${modelId}] 분석된 의미 있는 메시지: ${meaningfulMessages.length}개`,
+        );
 
-        if (combinedMessages.length >= 8 && !briefingData) {
-          const result = await fetchAiBriefing(combinedMessages);
-          setBriefingData(result?.data || result);
+        // 5. 의미 있는 메시지가 8개 이상일 때만 브리핑 요청
+        if (meaningfulMessages.length >= 8) {
+          const result = await fetchAiBriefing(meaningfulMessages.slice(-20)); // 너무 많으면 최근 20개만 요약
+          if (result && result.data) {
+            setBriefingData(result.data);
+          } else {
+            setBriefingData(result);
+          }
           setShowBriefing(true);
+          console.log("✅ 조건 충족: AI 브리핑 생성 성공");
         }
       } catch (error) {
         console.error("❌ 브리핑 로드 실패:", error);
       }
     };
+
     loadBriefing();
-  }, [modelId]);
+  }, [modelId]); // modelId가 바뀔 때만 실행
 
   const currentPart = transformedParts.find((p) => p.id === selectedId);
   const assemblyPart = transformedParts.find((p) => p.isAssembly);
@@ -171,12 +194,13 @@ const LeftContainer = ({
             <AiBriefing
               className="absolute left-4 bottom-20 z-50"
               onClose={() => setShowBriefing(false)}
+              data={briefingData}
             />
           )}
 
           <button
             onClick={() => setShowBriefing(!showBriefing)}
-            className="absolute bottom-8 left-4 w-10 h-10 rounded-xl flex items-center justify-center transition-all z-50"
+            className="absolute bottom-8 left-4 w-10 h-10 rounded-xl cursor-pointer  flex items-center justify-center transition-all z-50"
           >
             <img
               src={showBriefing ? AiBriefingIcon : AiNotBriefingIcon}
