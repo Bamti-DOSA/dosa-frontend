@@ -230,11 +230,10 @@ const RightContainer = ({
       const lastId = await getLastChatId();
       const newId = (Number(lastId) || 0) + 1;
 
-      // 1. 새로운 ID 설정
+      // 1. 확실하게 숫자로 변환하여 ID 설정
       setCurrentChatId(newId);
 
-      // 2. ✨ 가장 중요한 부분: 이전 메시지 상태를 빈 배열로 초기화!
-      // 이 코드가 없으면 이전 방의 메시지가 화면에 계속 남아있게 됩니다.
+      // 2. 메시지 초기화
       setMessages(initialMsg);
 
       setIsMenuOpen(false);
@@ -377,6 +376,8 @@ const RightContainer = ({
             modelName={modelName}
             currentChatId={currentChatId}
             setCurrentChatId={setCurrentChatId}
+            messages={messages} // 추가
+            setMessages={setMessages} // 추가
           />
         )}
       </div>
