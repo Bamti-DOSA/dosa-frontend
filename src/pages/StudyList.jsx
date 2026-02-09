@@ -12,11 +12,7 @@ const StudyList = () => {
   useEffect(() => {
     const loadAllData = async () => {
       try {
-        const data = await getModels();
-        console.log('📦 getModels 응답:', data);
-        console.log('📦 첫 번째 모델:', data[0]);
-        console.log('📦 첫 번째 모델 thumbnailUrl:', data[0]?.thumbnailUrl);
-        setAllModels(Array.isArray(data) ? data : []);
+        const data = await getModels();setAllModels(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('❌ 데이터 로딩 실패:', error);
         setAllModels([]);

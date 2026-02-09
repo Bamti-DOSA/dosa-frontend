@@ -12,10 +12,12 @@ import {
 } from "lucide-react";
 import QuizModal from "./QuizModal";
 import NotesModal from "./NotesModal";
+import PdfModal from "./PdfModal";
 
 const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
   const [quizModalOpen, setQuizModalOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
   const handleQuizClick = () => {
     setActiveMenu("퀴즈");
@@ -25,6 +27,11 @@ const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
   const handleNotesClick = () => {
     setActiveMenu("메모 리스트");
     setNotesModalOpen(true);
+  };
+
+  const handlePdfClick = () => {
+    setActiveMenu("PDF 출력");
+    setPdfModalOpen(true);
   };
 
   const navGroups = [
@@ -41,7 +48,7 @@ const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
         { name: "메모 리스트", icon: FileText, onClick: handleNotesClick },
         { name: "AI 대화 내역", icon: Sparkles },
         { name: "퀴즈 기록", icon: FolderMinus },
-        { name: "PDF 출력", icon: Share },
+        { name: "PDF 출력", icon: Share, onClick: handlePdfClick },
       ],
     },
     {
@@ -143,6 +150,15 @@ const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
         isOpen={notesModalOpen}
         onClose={() => {
           setNotesModalOpen(false);
+          setActiveMenu("홈");
+        }}
+        allModels={allModels}
+      />
+
+      <PdfModal
+        isOpen={pdfModalOpen}
+        onClose={() => {
+          setPdfModalOpen(false);
           setActiveMenu("홈");
         }}
         allModels={allModels}

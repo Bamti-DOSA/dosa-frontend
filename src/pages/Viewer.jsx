@@ -31,6 +31,12 @@ const Viewer = () => {
   const containerRef = useRef(null);
   const captureRef = useRef(null);
 
+  const [modelName, setModelName] = useState("");
+
+  // ✅ id 값 확인 로그 추가
+  useEffect(() => {
+  }, [id]);
+
   // API 데이터 로딩
   useEffect(() => {
     const loadModelData = async () => {
@@ -45,7 +51,6 @@ const Viewer = () => {
       setError(null);
 
       try {
-        console.log("🚀 Viewer - Loading model with ID:", id);
 
         const data = await getModelDetail(id);
 
@@ -53,7 +58,6 @@ const Viewer = () => {
           throw new Error(`ID ${id}에 해당하는 모델을 찾을 수 없습니다.`);
         }
 
-        console.log("📥 Viewer - API response:", data);
         setApiData(data);
       } catch (err) {
         console.error("❌ 데이터 로딩 실패:", err);
@@ -66,8 +70,6 @@ const Viewer = () => {
     loadModelData();
   }, [id]);
 
-  const [modelName, setModelName] = useState("");
-
   useEffect(() => {
     const fetchAndSetModelName = async () => {
       if (!id) return;
@@ -77,7 +79,6 @@ const Viewer = () => {
           // "Machine Vice" -> "MACHINE_VICE" 형태로 변환
           const formattedName = formatSystemName(currentModel.name);
           setModelName(formattedName);
-          console.log("✅ Viewer - 모델명 설정 완료:", formattedName);
         }
       } catch (err) {
         console.error("모델명 로드 실패:", err);
@@ -86,7 +87,7 @@ const Viewer = () => {
     fetchAndSetModelName();
   }, [id]);
 
-  // 👇 리사이즈 핸들러 (접기 로직 추가)
+  // 리사이즈 핸들러 (접기 로직 추가)
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -100,14 +101,14 @@ const Viewer = () => {
       const deltaPercent = (deltaX / containerWidth) * 100;
       let newWidth = startWidth + deltaPercent;
 
-      // 👇 최소값: 15% 미만이면 접기
+      // 최소값: 15% 미만이면 접기
       if (newWidth < 15) {
         setIsCollapsed(true);
         setRightPanelWidth(33); // 다시 펼칠 때를 위해 기본값 유지
         return;
       }
 
-      // 👇 최대값 제한
+      // 최대값 제한
       if (newWidth > 50) newWidth = 50;
       if (newWidth < 20) newWidth = 20;
 
@@ -189,6 +190,8 @@ const Viewer = () => {
           captureRef={captureRef}
           currentPart={null}
           chatHistory={aiChats}
+          modelId={id}  // ✅ id가 제대로 있는지 확인
+          modelName={modelName}
         />
       </header>
 

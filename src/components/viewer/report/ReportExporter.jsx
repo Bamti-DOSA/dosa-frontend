@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Share, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
+import { savePdfRecord } from "../../../db/pdfDB";
 
-const ReportExporter = ({ captureRef, currentPart, chatHistory }) => {
+const ReportExporter = ({ captureRef, currentPart, chatHistory, modelId, modelName }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleExport = async () => {
@@ -11,6 +12,7 @@ const ReportExporter = ({ captureRef, currentPart, chatHistory }) => {
     try {
       setIsLoading(true);
 
+
       // 1. 캡쳐 (고화질)
       const imgData = await toPng(captureRef.current, {
         cacheBust: true,
@@ -18,23 +20,13 @@ const ReportExporter = ({ captureRef, currentPart, chatHistory }) => {
         backgroundColor: "#ffffff",
       });
 
-      // 2. iframe 생성
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "absolute";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "none";
-      document.body.appendChild(iframe);
-
       // 제목 및 설명 설정
-      const reportTitle = currentPart ? currentPart.name : "Robot Gripper 전체 조립도";
+      const reportTitle = currentPart ? currentPart.name : `${modelName || 'Robot Gripper'} 전체 조립도`;
       const reportDesc = currentPart 
         ? currentPart.description 
-        : "이 문서는 Robot Gripper의 전체 조립 형상에 대한 기술 분석 보고서입니다. 현재 특정 부품이 선택되지 않은 상태로, 전체적인 구조와 결합 상태를 나타냅니다. 각 부품의 유기적인 연결 구조를 확인할 수 있습니다.";
+        : `이 문서는 ${modelName || 'Robot Gripper'}의 전체 조립 형상에 대한 기술 분석 보고서입니다. 현재 특정 부품이 선택되지 않은 상태로, 전체적인 구조와 결합 상태를 나타냅니다. 각 부품의 유기적인 연결 구조를 확인할 수 있습니다.`;
 
-      const doc = iframe.contentWindow.document;
-      
-      // 채팅 기록 HTML 변환 (Tailwind 클래스 적용)
+      // 채팅 기록 HTML 변환
       const chatHtml = chatHistory.map(chat => `
         <div class="mb-6 border-b border-dashed border-gray-200 pb-4 break-inside-avoid">
           <div class="mb-2 text-sm text-gray-600">
@@ -56,12 +48,50 @@ const ReportExporter = ({ captureRef, currentPart, chatHistory }) => {
         </div>
       `).join('');
 
+      // modelId가 유효한지 확인
+      if (!modelId || modelId === 'undefined') {
+        console.error('❌ modelId가 유효하지 않습니다:', modelId);
+        alert('모델 ID를 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+        setIsLoading(false);
+        return;
+      }
+
+      // IndexedDB에 PDF 기록 저장
+      try {
+        const savedId = await savePdfRecord(
+          String(modelId), // ✅ modelId를 문자열로 변환하여 저장
+          reportTitle,
+          imgData,
+          {
+            partName: currentPart?.name || '전체 조립도',
+            chatCount: chatHistory.length,
+            exportDate: new Date().toISOString(),
+            htmlContent: chatHtml,
+            description: reportDesc,
+          }
+        );
+        console.log('✅ PDF 기록이 저장되었습니다. ID:', savedId);
+      } catch (dbError) {
+        console.error('❌ PDF 기록 저장 실패:', dbError);
+        // 저장 실패해도 인쇄는 계속 진행
+      }
+
+      // 2. iframe 생성
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "absolute";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "none";
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow.document;
+
       doc.open();
       doc.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Robot Gripper Report</title>
+          <title>${modelName || 'Robot Gripper'} Report</title>
           <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
           
           <script src="https://cdn.tailwindcss.com"></script>
@@ -88,7 +118,7 @@ const ReportExporter = ({ captureRef, currentPart, chatHistory }) => {
           <div class="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
             <div>
               <h1 class="text-2xl font-extrabold text-gray-900 m-0">기술 분석 보고서</h1>
-              <div class="text-sm text-gray-500 mt-1">Project: Robot Gripper System</div>
+              <div class="text-sm text-gray-500 mt-1">Project: ${modelName || 'Robot Gripper'} System</div>
             </div>
             <div class="text-xs text-gray-500">출력일: ${new Date().toLocaleDateString()}</div>
           </div>
@@ -130,14 +160,11 @@ const ReportExporter = ({ captureRef, currentPart, chatHistory }) => {
 
       // 인쇄 실행
       iframe.onload = () => {
-        // Tailwind 스크립트 실행 시간을 아주 잠깐 벌어줍니다.
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
         }, 500);
 
-        // 인쇄창 닫히면 정리
-        // (참고: 크롬에서는 print()가 블로킹되지 않을 수 있어 넉넉히 시간을 둡니다)
         setTimeout(() => {
           document.body.removeChild(iframe);
           setIsLoading(false);

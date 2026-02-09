@@ -74,7 +74,6 @@ export const saveMemo = async (modelId, content) => {
       content: content,
       createdAt: Date.now(),
     });
-    console.log("✅ 메모 DB 저장 성공");
   } catch (e) {
     console.error("❌ 메모 저장 에러:", e);
   }
