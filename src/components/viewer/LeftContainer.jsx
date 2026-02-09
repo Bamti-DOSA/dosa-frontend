@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -9,6 +9,7 @@ import {
   Center,
 } from "@react-three/drei";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 import AiNote from "./ai/AiNote";
 import PartDetail from "../part/PartDetail";
@@ -16,6 +17,7 @@ import PartList from "../part/PartList";
 import AiBriefing from "./ai/AiBriefing";
 import AnimationPlayer from "./AnimationPlayer";
 import AnimationSlider from "./AnimationSlider";
+import CoordinateDisplay from "./CoordinateDisplay";
 
 import AiBriefingIcon from "../../assets/icons/icon-ai-breifing.svg";
 import AiNotBriefingIcon from "../../assets/icons/icon-ai-notbreifing.svg";
@@ -23,6 +25,52 @@ import AiNotBriefingIcon from "../../assets/icons/icon-ai-notbreifing.svg";
 import { mapModelData } from "../../utils/modelMapper";
 import { fetchAiBriefing } from "../../api/aiAPI";
 import { getChatsByModel } from "../../api/aiDB";
+
+// ✅ 수정된 중심 좌표 계산 함수
+async function calculateModelCenter(modelPath) {
+  if (!modelPath) {
+    console.warn('⚠️ modelPath가 없습니다');
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  console.log('🔍 모델 중심 계산 시작:', modelPath);
+
+  try {
+    const loader = new GLTFLoader();
+    
+    return new Promise((resolve, reject) => {
+      loader.load(
+        modelPath,
+        (gltf) => {
+          console.log('✅ 모델 로드 성공:', modelPath);
+          
+          const box = new THREE.Box3().setFromObject(gltf.scene);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          
+          const position = {
+            x: center.x,
+            y: center.y,
+            z: center.z
+          };
+          
+          console.log('📍 계산된 중심 좌표:', position);
+          resolve(position);
+        },
+        (progress) => {
+          // 로딩 진행률 (선택사항)
+        },
+        (error) => {
+          console.error('❌ 모델 로드 실패:', modelPath, error);
+          resolve({ x: 0, y: 0, z: 0 });
+        }
+      );
+    });
+  } catch (error) {
+    console.error('❌ calculateModelCenter 에러:', error);
+    return { x: 0, y: 0, z: 0 };
+  }
+}
 
 function SinglePartModel({ modelPath, overrideMaterial }) {
   if (!modelPath) return null;
@@ -74,21 +122,7 @@ const LeftContainer = ({
   const [totalFrames] = useState(100);
 
   const [activeMaterial, setActiveMaterial] = useState(null);
-
-  useEffect(() => {
-    const loadParts = async () => {
-      const mapped = await mapModelData(apiData);
-      setTransformedParts(mapped);
-
-      if (mapped.length > 0 && !selectedId) {
-        setSelectedId(mapped[0].id);
-      }
-    };
-
-    if (apiData) {
-      loadParts();
-    }
-  }, [apiData]);
+  const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0, z: 0 });
 
   const [briefingData, setBriefingData] = useState(null);
   useEffect(() => {
@@ -147,13 +181,82 @@ const LeftContainer = ({
   const handleReset = () => setCurrentFrame(0);
   const handleFrameChange = (frame) => setCurrentFrame(frame);
 
-  const handlePartSelect = (partId) => {
+  // ✅ 3단계: 부품 선택 시 좌표 업데이트
+  const handlePartSelect = async (partId) => {
+    console.log('🎯 부품 선택:', partId);
     setSelectedId(partId);
+
+    // 선택된 부품 찾기
+    const selectedPart = transformedParts.find(p => p.id === partId);
+    
+    if (selectedPart && selectedPart.model) {
+      console.log('📍 선택된 부품의 중심 좌표 계산 시작:', selectedPart.name);
+      
+      // 부품의 중심 좌표 계산
+      const center = await calculateModelCenter(selectedPart.model);
+      console.log('✅ 선택된 부품 중심 좌표:', center);
+      
+      // 좌표 업데이트
+      setCurrentPosition(center);
+    } else {
+      console.warn('⚠️ 선택된 부품에 model 경로가 없습니다');
+    }
   };
 
   const handleMaterialSelect = (materialProps) => {
     setActiveMaterial(materialProps);
   };
+
+  // ✅ 부품 데이터 로드 및 기본 좌표 설정
+  useEffect(() => {
+    const loadParts = async () => {
+      console.log('🚀 loadParts 시작, apiData:', apiData);
+      
+      const mapped = await mapModelData(apiData);
+      console.log('📦 매핑된 부품들:', mapped);
+      
+      setTransformedParts(mapped);
+
+      // 조립품을 기본 선택으로 설정
+      const assemblyPart = mapped.find(p => p.isAssembly);
+      
+      if (assemblyPart && !selectedId) {
+        console.log('🎯 조립품 발견:', assemblyPart);
+        setSelectedId(assemblyPart.id);
+        
+        // 조립품의 중심 좌표 계산
+        if (assemblyPart.model) {
+          console.log('📍 조립품 중심 좌표 계산 시작...');
+          const center = await calculateModelCenter(assemblyPart.model);
+          console.log('✅ 조립품 중심 좌표:', center);
+          setCurrentPosition(center);
+        } else {
+          console.warn('⚠️ 조립품에 model 경로가 없습니다');
+        }
+      } else if (mapped.length > 0 && !selectedId) {
+        console.log('🎯 첫 번째 부품 선택:', mapped[0]);
+        setSelectedId(mapped[0].id);
+        
+        // 첫 번째 부품의 중심 좌표 계산
+        if (mapped[0].model) {
+          console.log('📍 첫 번째 부품 중심 좌표 계산 시작...');
+          const center = await calculateModelCenter(mapped[0].model);
+          console.log('✅ 첫 번째 부품 중심 좌표:', center);
+          setCurrentPosition(center);
+        } else {
+          console.warn('⚠️ 첫 번째 부품에 model 경로가 없습니다');
+        }
+      } else {
+        console.log('ℹ️ 조립품/부품이 없거나 이미 선택됨');
+      }
+    };
+
+    if (apiData) {
+      loadParts();
+    } else {
+      console.warn('⚠️ apiData가 없습니다');
+    }
+  }, [apiData]);
 
   return (
     <div className="bg-white w-full h-full flex flex-row p-4 gap-1 relative overflow-hidden">
@@ -177,6 +280,7 @@ const LeftContainer = ({
 
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <div className="flex-[7.5] bg-white rounded-2xl relative overflow-hidden flex flex-col">
+          {/* AiBriefing (왼쪽 하단) */}
           {showBriefing && (
             <AiBriefing
               className="absolute left-4 bottom-20 z-50"
@@ -185,9 +289,15 @@ const LeftContainer = ({
             />
           )}
 
+          {/* CoordinateDisplay */}
+          <CoordinateDisplay 
+            position={currentPosition}
+            className="absolute right-4 bottom-20 z-50"
+          />
+
           <button
             onClick={() => setShowBriefing(!showBriefing)}
-            className="absolute bottom-8 left-4 w-10 h-10 rounded-xl cursor-pointer  flex items-center justify-center transition-all z-50"
+            className="absolute bottom-8 left-4 w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-all z-50"
           >
             <img
               src={showBriefing ? AiBriefingIcon : AiNotBriefingIcon}
