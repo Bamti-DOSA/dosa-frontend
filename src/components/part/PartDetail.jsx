@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import { motion, useMotionValue } from "framer-motion";
+import { MATERIAL_LIST } from "../../db/materialDB";
 
-const PartDetail = ({ selectedPart }) => {
+const PartDetail = ({ selectedPart, onMaterialSelect }) => {
   const [leftWidth, setLeftWidth] = useState(65);
   const [height, setHeight] = useState(200);
   const [isHidden, setIsHidden] = useState(false);
@@ -12,33 +13,36 @@ const PartDetail = ({ selectedPart }) => {
   });
 
   // 재질 데이터 예시 (나중에 실제 데이터로 교체하세요)
-  const materialList = [
-    {
-      id: 1,
-      name: "카본 파이버",
-      desc: "초경량 고강성 소재로 드론의 비행 시간을 극대화합니다.",
-    },
-    {
-      id: 2,
-      name: "알루미늄 6061",
-      desc: "내식성이 뛰어나고 구조적 강도가 우수한 항공 등급 금속입니다.",
-    },
-    {
-      id: 3,
-      name: "강화 플라스틱",
-      desc: "충격 흡수력이 뛰어나며 유지보수 비용이 저렴한 범용 소재입니다.",
-    },
-    {
-      id: 4,
-      name: "티타늄 합금",
-      desc: "극한의 환경에서도 변형이 없는 최고급 고강도 합금입니다.",
-    },
-    {
-      id: 5,
-      name: "매트 블랙 코팅",
-      desc: "빛 반사를 최소화하여 스텔스 비행 및 고급스러운 외관을 제공합니다.",
-    },
-  ];
+  // const materialList = [
+  //   {
+  //     id: 1,
+  //     name: "카본 파이버",
+  //     desc: "초경량 고강성 소재로 드론의 비행 시간을 극대화합니다.",
+  //     props: { color: "#1A1A1A", metalness: 0.8, roughness: 0.2 }
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "알루미늄 6061",
+  //     desc: "내식성이 뛰어나고 구조적 강도가 우수한 항공 등급 금속입니다.",
+  //     props: { color: "#D1D5DB", metalness: 0.9, roughness: 0.1 }
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "강화 플라스틱",
+  //     desc: "충격 흡수력이 뛰어나며 유지보수 비용이 저렴한 범용 소재입니다.",
+  //     props: { color: "#4B5563", metalness: 0.2, roughness: 0.8 }
+  //   },
+  //   {
+  //     id: 4,
+  //     name: "티타늄 합금",
+  //     desc: "극한의 환경에서도 변형이 없는 최고급 고강도 합금입니다.",
+  //   },
+  //   {
+  //     id: 5,
+  //     name: "매트 블랙 코팅",
+  //     desc: "빛 반사를 최소화하여 스텔스 비행 및 고급스러운 외관을 제공합니다.",
+  //   },
+  // ];
 
   // 마우스 드래그 스크롤을 위한 Ref와 상태
   const scrollRef = useRef(null);
@@ -169,14 +173,17 @@ const PartDetail = ({ selectedPart }) => {
             ${isDragging ? "cursor-grabbing" : "cursor-grab"}
           `}
         >
-          {materialList.map((mat) => (
+          {MATERIAL_LIST.map((mat) => (
             <div
               key={mat.id}
-              onClick={() =>
-                !isDragging &&
-                setSelectedMaterial({ name: mat.name, desc: mat.desc })
-              }
-              className={`flex-shrink-0 w-14 h-14 rounded-xl transition-all border-2 
+              onClick={() => {
+                if (!isDragging) {
+                  setSelectedMaterial({ name: mat.name, desc: mat.desc });
+                  // 3. 클릭 시 부모 컴포넌트로 재질 속성 전달
+                  if (onMaterialSelect) onMaterialSelect(mat.materialProps);
+                }
+              }}
+              className={`flex-shrink-0 w-10 h-10 rounded-xl transition-all border-2 
                 ${selectedMaterial.name === mat.name ? "border-[#4ade80]" : "border-transparent opacity-70"}
               `}
             >

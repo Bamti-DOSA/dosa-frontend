@@ -8,24 +8,46 @@ import {
   GizmoViewport,
   Center,
 } from "@react-three/drei";
+import * as THREE from "three"; // 재질 처리를 위해 추가
+
 import AiNote from "./ai/AiNote";
 import PartDetail from "../part/PartDetail";
 import PartList from "../part/PartList";
 import AiBriefing from "./ai/AiBriefing";
 import AnimationPlayer from "./AnimationPlayer";
 import AnimationSlider from "./AnimationSlider";
+
 import AiBriefingIcon from "../../assets/icons/icon-ai-breifing.svg";
 import AiNotBriefingIcon from "../../assets/icons/icon-ai-notbreifing.svg";
+
 import { mapModelData } from "../../utils/modelMapper";
 import { fetchAiBriefing } from "../../api/aiAPI";
 import { getChatsByModel } from "../../api/aiDB";
 
-function SinglePartModel({ modelPath }) {
+// 개별 부품 모델 뷰어 (재질 변경 로직 추가)
+function SinglePartModel({ modelPath, overrideMaterial }) {
   if (!modelPath) return null;
 
   try {
     const { scene } = useGLTF(modelPath);
-    // ✨ Center 컴포넌트로 감싸서 자동으로 중앙정렬
+
+    // 재질 덮어쓰기 로직
+    useEffect(() => {
+      if (!overrideMaterial) return;
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          child.material = child.material.clone();
+          if (overrideMaterial.color)
+            child.material.color.set(overrideMaterial.color);
+          if (overrideMaterial.metalness !== undefined)
+            child.material.metalness = overrideMaterial.metalness;
+          if (overrideMaterial.roughness !== undefined)
+            child.material.roughness = overrideMaterial.roughness;
+          child.material.needsUpdate = true;
+        }
+      });
+    }, [overrideMaterial, scene]);
+
     return (
       <Center>
         <primitive object={scene.clone()} />
@@ -53,6 +75,10 @@ const LeftContainer = ({
   const [currentFrame, setCurrentFrame] = useState(0);
   const [totalFrames] = useState(100);
 
+  // ✨ 1. 재질 상태 추가
+  const [activeMaterial, setActiveMaterial] = useState(null);
+
+  // 부품 로드 로직
   useEffect(() => {
     const loadParts = async () => {
       const mapped = await mapModelData(apiData);
@@ -68,12 +94,11 @@ const LeftContainer = ({
     }
   }, [apiData]);
 
+  // AI 브리핑 로직 (기존 유지)
   const [briefingData, setBriefingData] = useState(null);
-
   useEffect(() => {
     const loadBriefing = async () => {
       if (!modelId) return;
-
       try {
         const modelChats = await getChatsByModel(String(modelId));
         if (!modelChats || modelChats.length === 0) return;
@@ -89,53 +114,35 @@ const LeftContainer = ({
           return chatDate === today;
         });
 
-        const combinedMessages = todaysChats.slice(-3).reduce((acc, chat) => {
-          return [...acc, ...(chat.messages || [])];
-        }, []);
-
-        console.log(
-          `📊 모델(${modelId}) 오늘 메시지 수:`,
-          combinedMessages.length,
-        );
+        const combinedMessages = todaysChats
+          .slice(-3)
+          .reduce((acc, chat) => [...acc, ...(chat.messages || [])], []);
 
         if (combinedMessages.length >= 8 && !briefingData) {
           const result = await fetchAiBriefing(combinedMessages);
-          if (result && result.data) {
-            setBriefingData(result.data);
-          } else {
-            setBriefingData(result);
-          }
+          setBriefingData(result?.data || result);
           setShowBriefing(true);
-          console.log("✅ 모델 맞춤형 브리핑 생성 성공!");
         }
       } catch (error) {
         console.error("❌ 브리핑 로드 실패:", error);
       }
     };
-
     loadBriefing();
   }, [modelId]);
 
   const currentPart = transformedParts.find((p) => p.id === selectedId);
   const assemblyPart = transformedParts.find((p) => p.isAssembly);
 
-  const handleReset = () => {
-    setCurrentFrame(0);
-  };
-
-  const handleFrameChange = (frame) => {
-    setCurrentFrame(frame);
-  };
+  const handleReset = () => setCurrentFrame(0);
+  const handleFrameChange = (frame) => setCurrentFrame(frame);
 
   const handlePartSelect = (partId) => {
     setSelectedId(partId);
-    const part = transformedParts.find((p) => p.id === partId);
+  };
 
-    if (part?.isAssembly) {
-      setShowAssembly(true);
-    } else {
-      setShowAssembly(true);
-    }
+  // ✨ 2. 재질 선택 핸들러
+  const handleMaterialSelect = (materialProps) => {
+    setActiveMaterial(materialProps);
   };
 
   return (
@@ -169,12 +176,11 @@ const LeftContainer = ({
 
           <button
             onClick={() => setShowBriefing(!showBriefing)}
-            className="absolute bottom-8 left-4 w-10 h-10 rounded-xl flex items-center justify-center transition-all z-50 hover:scale-105 active:scale-95"
-            title="AI 브리핑 토글"
+            className="absolute bottom-8 left-4 w-10 h-10 rounded-xl flex items-center justify-center transition-all z-50"
           >
             <img
               src={showBriefing ? AiBriefingIcon : AiNotBriefingIcon}
-              alt="AI Briefing Icon"
+              alt="AI Briefing"
               className="w-8 h-8"
             />
           </button>
@@ -188,8 +194,8 @@ const LeftContainer = ({
                     intensity={0.6}
                     contactShadow={false}
                   >
-                    {/* ✨ Center로 감싸서 중앙정렬 */}
                     <Center>
+                      {/* ✨ 3. 조립 모델에 재질 전달 */}
                       <AnimationPlayer
                         url={assemblyPart.model}
                         currentFrame={currentFrame}
@@ -197,17 +203,12 @@ const LeftContainer = ({
                         selectedPartMesh={
                           currentPart?.isAssembly ? null : currentPart?.meshName
                         }
+                        overrideMaterial={activeMaterial}
                       />
                     </Center>
                   </Stage>
                 </Suspense>
                 <OrbitControls makeDefault />
-                <GizmoHelper alignment="top-right" margin={[80, 80]}>
-                  <GizmoViewport
-                    axisColors={["#68A2FF", "#84EBAD", "#FF9191"]}
-                    labelColor="white"
-                  />
-                </GizmoHelper>
               </Canvas>
             ) : currentPart?.model ? (
               <Canvas shadows camera={{ position: [4, 0, 4], fov: 50 }}>
@@ -217,20 +218,18 @@ const LeftContainer = ({
                     intensity={0.6}
                     contactShadow={false}
                   >
-                    <SinglePartModel modelPath={currentPart.model} />
+                    {/* ✨ 4. 단일 모델에 재질 전달 */}
+                    <SinglePartModel
+                      modelPath={currentPart.model}
+                      overrideMaterial={activeMaterial}
+                    />
                   </Stage>
                 </Suspense>
                 <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} />
-                <GizmoHelper alignment="top-right" margin={[80, 80]}>
-                  <GizmoViewport
-                    axisColors={["#68A2FF", "#84EBAD", "#FF9191"]}
-                    labelColor="white"
-                  />
-                </GizmoHelper>
               </Canvas>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
-                3D 모델을 불러올 수 없습니다.
+                모델을 불러오는 중...
               </div>
             )}
           </div>
@@ -248,8 +247,12 @@ const LeftContainer = ({
           )}
         </div>
 
-        <div className="flex-[2.5] max-h-[224px] pt-2">
-          <PartDetail selectedPart={currentPart} />
+        <div className="flex-[2.5] min-h-[160px] pt-2">
+          {/* ✨ 5. 재질 선택 함수 전달 */}
+          <PartDetail
+            selectedPart={currentPart}
+            onMaterialSelect={handleMaterialSelect}
+          />
         </div>
       </div>
     </div>
