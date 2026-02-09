@@ -12,11 +12,7 @@ const StudyList = () => {
   useEffect(() => {
     const loadAllData = async () => {
       try {
-        const data = await getModels();
-        console.log('📦 getModels 응답:', data);
-        console.log('📦 첫 번째 모델:', data[0]);
-        console.log('📦 첫 번째 모델 thumbnailUrl:', data[0]?.thumbnailUrl);
-        setAllModels(Array.isArray(data) ? data : []);
+        const data = await getModels();setAllModels(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('❌ 데이터 로딩 실패:', error);
         setAllModels([]);
@@ -34,7 +30,11 @@ const StudyList = () => {
 
   return (
     <div className="flex flex-row">
-      <SideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+      <SideBar 
+        activeMenu={activeMenu} 
+        setActiveMenu={setActiveMenu} 
+        allModels={allModels}
+      />
       <div className="ml-[275px] px-[60px] py-[46px] w-full bg-gray-50">
         <div className="mt-[46px] t-24-semi">학습 페이지</div>
 

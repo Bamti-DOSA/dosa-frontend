@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight, Flag, Trophy, Target, TrendingUp } from 'lucide-react';
 import { generateQuiz } from '../api/aiAPI';
+import { saveQuizRecord } from '../db/quizDB';
+
+// 모델 ID 매핑
+const MODEL_IDS = {
+  'Drone': '1',
+  'Leaf Spring': '2',
+  'Machine Vice': '3',
+  'Robot Arm': '4',
+  'Robot Gripper': '5',
+  'Suspension': '6',
+  'V4 Engine': '7'
+};
 
 const Quiz = () => {
   const navigate = useNavigate();
@@ -15,6 +27,7 @@ const Quiz = () => {
   const [quizData, setQuizData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [recordSaved, setRecordSaved] = useState(false);
 
   // 퀴즈 데이터 로드
   useEffect(() => {
@@ -57,10 +70,6 @@ const Quiz = () => {
     }
   };
 
-  const handleSubmit = () => {
-    setShowResult(true);
-  };
-
   const calculateScore = () => {
     let correct = 0;
     quizData.quizzes.forEach((q, index) => {
@@ -69,6 +78,70 @@ const Quiz = () => {
       }
     });
     return correct;
+  };
+
+  const getCorrectAndWrongAnswers = () => {
+    const correctAnswers = [];
+    const wrongAnswers = [];
+
+    quizData.quizzes.forEach((q, index) => {
+      const userAnswer = selectedAnswers[index];
+      const isCorrect = userAnswer === q.answer;
+
+      if (isCorrect) {
+        correctAnswers.push({
+          question: q.question,
+          answer: q.options[q.answer]
+        });
+      } else {
+        wrongAnswers.push({
+          question: q.question,
+          userAnswer: userAnswer !== undefined ? q.options[userAnswer] : '선택 안 함',
+          correctAnswer: q.options[q.answer],
+          explanation: q.explanation
+        });
+      }
+    });
+
+    return { correctAnswers, wrongAnswers };
+  };
+
+  const handleSubmit = async () => {
+    setShowResult(true);
+    
+    // 퀴즈 기록 저장
+    if (!recordSaved) {
+      try {
+        const score = calculateScore();
+        const totalQuestions = quizData.quizzes.length;
+        const { correctAnswers, wrongAnswers } = getCorrectAndWrongAnswers();
+        const modelId = MODEL_IDS[model] || model;
+
+        console.log('💾 퀴즈 기록 저장 시작:', {
+          modelId,
+          model,
+          score,
+          totalQuestions,
+          difficulty
+        });
+
+        await saveQuizRecord(
+          modelId,
+          model,
+          score,
+          totalQuestions,
+          difficulty,
+          correctAnswers,
+          wrongAnswers
+        );
+
+        setRecordSaved(true);
+        console.log('✅ 퀴즈 기록 저장 완료');
+      } catch (error) {
+        console.error('❌ 퀴즈 기록 저장 실패:', error);
+        // 저장 실패해도 결과는 표시
+      }
+    }
   };
 
   // 로딩 상태
@@ -121,6 +194,11 @@ const Quiz = () => {
               <p className="text-gray-500 t-16-regular">
                 {quizData.topic} · {difficulty === 'Hard' ? '어려움' : '일반'} 난이도
               </p>
+              {recordSaved && (
+                <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
+                  ✅ 기록이 저장되었습니다
+                </p>
+              )}
             </div>
             <button
               onClick={() => navigate('/study-list')}
