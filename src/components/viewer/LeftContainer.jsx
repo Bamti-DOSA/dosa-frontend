@@ -7,6 +7,7 @@ import {
   GizmoHelper,
   GizmoViewport,
   Center,
+  TransformControls,
 } from "@react-three/drei";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -25,54 +26,61 @@ import AiNotBriefingIcon from "../../assets/icons/icon-ai-notbreifing.svg";
 import { mapModelData } from "../../utils/modelMapper";
 import { fetchAiBriefing } from "../../api/aiAPI";
 import { getChatsByModel } from "../../api/aiDB";
+import LightOnIcon from "../../assets/icons/icon-light-on.svg";
+import LightOffIcon from "../../assets/icons/icon-light-off.svg";
 
 // ✅ 수정된 중심 좌표 계산 함수
 async function calculateModelCenter(modelPath) {
   if (!modelPath) {
-    console.warn('⚠️ modelPath가 없습니다');
+    console.warn("⚠️ modelPath가 없습니다");
     return { x: 0, y: 0, z: 0 };
   }
 
-  console.log('🔍 모델 중심 계산 시작:', modelPath);
+  console.log("🔍 모델 중심 계산 시작:", modelPath);
 
   try {
     const loader = new GLTFLoader();
-    
+
     return new Promise((resolve, reject) => {
       loader.load(
         modelPath,
         (gltf) => {
-          console.log('✅ 모델 로드 성공:', modelPath);
-          
+          console.log("✅ 모델 로드 성공:", modelPath);
+
           const box = new THREE.Box3().setFromObject(gltf.scene);
           const center = new THREE.Vector3();
           box.getCenter(center);
-          
+
           const position = {
             x: center.x,
             y: center.y,
-            z: center.z
+            z: center.z,
           };
-          
-          console.log('📍 계산된 중심 좌표:', position);
+
+          console.log("📍 계산된 중심 좌표:", position);
           resolve(position);
         },
         (progress) => {
           // 로딩 진행률 (선택사항)
         },
         (error) => {
-          console.error('❌ 모델 로드 실패:', modelPath, error);
+          console.error("❌ 모델 로드 실패:", modelPath, error);
           resolve({ x: 0, y: 0, z: 0 });
-        }
+        },
       );
     });
   } catch (error) {
-    console.error('❌ calculateModelCenter 에러:', error);
+    console.error("❌ calculateModelCenter 에러:", error);
     return { x: 0, y: 0, z: 0 };
   }
 }
 
-function SinglePartModel({ modelPath, overrideMaterial }) {
+function SinglePartModel({
+  modelPath,
+  overrideMaterial,
+  isLightOn,
+  setIsLightOn,
+}) {
   if (!modelPath) return null;
 
   try {
@@ -112,6 +120,8 @@ const LeftContainer = ({
   floatingMessages,
   setFloatingMessages,
   modelId,
+  isLightOn,
+  setIsLightOn,
 }) => {
   const [transformedParts, setTransformedParts] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -123,10 +133,10 @@ const LeftContainer = ({
 
   const [activeMaterial, setActiveMaterial] = useState(null);
   const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0, z: 0 });
-  
+
   // ✅ 4단계: 기본 중심 좌표를 저장할 state 추가
   const [basePosition, setBasePosition] = useState({ x: 0, y: 0, z: 0 });
-  
+
   // ✅ 4단계: 슬라이딩 된 좌표를 저장할 state 추가
   const [animatedPositions, setAnimatedPositions] = useState({});
 
@@ -189,28 +199,28 @@ const LeftContainer = ({
 
   // ✅ 3단계: 부품 선택 시 좌표 업데이트
   const handlePartSelect = async (partId) => {
-    console.log('🎯 부품 선택:', partId);
+    console.log("🎯 부품 선택:", partId);
     setSelectedId(partId);
 
-    const selectedPart = transformedParts.find(p => p.id === partId);
-    
+    const selectedPart = transformedParts.find((p) => p.id === partId);
+
     if (selectedPart && selectedPart.model) {
-      console.log('📍 선택된 부품의 중심 좌표 계산 시작:', selectedPart.name);
-      
+      console.log("📍 선택된 부품의 중심 좌표 계산 시작:", selectedPart.name);
+
       // ✅ 4단계: 슬라이딩 된 좌표가 있으면 그것을 사용, 없으면 계산
       if (currentFrame > 0 && animatedPositions[selectedPart.meshName]) {
         // 슬라이딩 된 좌표 사용
         const animatedPos = animatedPositions[selectedPart.meshName];
-        console.log('🎬 슬라이딩 된 좌표 사용:', animatedPos);
+        console.log("🎬 슬라이딩 된 좌표 사용:", animatedPos);
         setCurrentPosition(animatedPos);
       } else {
         // 기본 중심 좌표 계산
         const center = await calculateModelCenter(selectedPart.model);
-        console.log('✅ 선택된 부품 중심 좌표:', center);
+        console.log("✅ 선택된 부품 중심 좌표:", center);
         setCurrentPosition(center);
       }
     } else {
-      console.warn('⚠️ 선택된 부품에 model 경로가 없습니다');
+      console.warn("⚠️ 선택된 부품에 model 경로가 없습니다");
     }
   };
 
@@ -223,61 +233,66 @@ const LeftContainer = ({
     if (currentPart && !currentPart.isAssembly && currentFrame > 0) {
       // AnimationPlayer로부터 현재 부품의 위치를 가져와야 함
       // 이 부분은 AnimationPlayer가 위치 정보를 제공하는 방식에 따라 달라짐
-      console.log('🎬 프레임 변경됨:', currentFrame, '부품:', currentPart.meshName);
+      console.log(
+        "🎬 프레임 변경됨:",
+        currentFrame,
+        "부품:",
+        currentPart.meshName,
+      );
     } else if (currentFrame === 0 && currentPart) {
       // 슬라이더가 0으로 리셋되면 기본 좌표로 복원
       setCurrentPosition(basePosition);
-      console.log('🔄 기본 좌표로 복원:', basePosition);
+      console.log("🔄 기본 좌표로 복원:", basePosition);
     }
   }, [currentFrame, currentPart]);
 
   // ✅ 부품 데이터 로드 및 기본 좌표 설정
   useEffect(() => {
     const loadParts = async () => {
-      console.log('🚀 loadParts 시작, apiData:', apiData);
-      
+      console.log("🚀 loadParts 시작, apiData:", apiData);
+
       const mapped = await mapModelData(apiData);
-      console.log('📦 매핑된 부품들:', mapped);
-      
+      console.log("📦 매핑된 부품들:", mapped);
+
       setTransformedParts(mapped);
 
-      const assemblyPart = mapped.find(p => p.isAssembly);
-      
+      const assemblyPart = mapped.find((p) => p.isAssembly);
+
       if (assemblyPart && !selectedId) {
-        console.log('🎯 조립품 발견:', assemblyPart);
+        console.log("🎯 조립품 발견:", assemblyPart);
         setSelectedId(assemblyPart.id);
-        
+
         if (assemblyPart.model) {
-          console.log('📍 조립품 중심 좌표 계산 시작...');
+          console.log("📍 조립품 중심 좌표 계산 시작...");
           const center = await calculateModelCenter(assemblyPart.model);
-          console.log('✅ 조립품 중심 좌표:', center);
+          console.log("✅ 조립품 중심 좌표:", center);
           setCurrentPosition(center);
           setBasePosition(center); // ✅ 4단계: 기본 좌표 저장
         } else {
-          console.warn('⚠️ 조립품에 model 경로가 없습니다');
+          console.warn("⚠️ 조립품에 model 경로가 없습니다");
         }
       } else if (mapped.length > 0 && !selectedId) {
-        console.log('🎯 첫 번째 부품 선택:', mapped[0]);
+        console.log("🎯 첫 번째 부품 선택:", mapped[0]);
         setSelectedId(mapped[0].id);
-        
+
         if (mapped[0].model) {
-          console.log('📍 첫 번째 부품 중심 좌표 계산 시작...');
+          console.log("📍 첫 번째 부품 중심 좌표 계산 시작...");
           const center = await calculateModelCenter(mapped[0].model);
-          console.log('✅ 첫 번째 부품 중심 좌표:', center);
+          console.log("✅ 첫 번째 부품 중심 좌표:", center);
           setCurrentPosition(center);
           setBasePosition(center); // ✅ 4단계: 기본 좌표 저장
         } else {
-          console.warn('⚠️ 첫 번째 부품에 model 경로가 없습니다');
+          console.warn("⚠️ 첫 번째 부품에 model 경로가 없습니다");
         }
       } else {
-        console.log('ℹ️ 조립품/부품이 없거나 이미 선택됨');
+        console.log("ℹ️ 조립품/부품이 없거나 이미 선택됨");
       }
     };
 
     if (apiData) {
       loadParts();
     } else {
-      console.warn('⚠️ apiData가 없습니다');
+      console.warn("⚠️ apiData가 없습니다");
     }
   }, [apiData]);
 
@@ -303,6 +318,21 @@ const LeftContainer = ({
 
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <div className="flex-[7.5] bg-white rounded-2xl relative overflow-hidden flex flex-col">
+          {/* 💡 여기에 조명 버튼 배치 (좌표축 근처) */}
+          <div className="absolute -top-4 right-2 z-50 flex flex-col gap-2">
+            <button
+              onClick={() => setIsLightOn(!isLightOn)}
+              className="w-14 h-14 mt-1 flex items-center justify-center hover:bg-white transition-all"
+              title={isLightOn ? "조명 끄기" : "조명 켜기"}
+            >
+              <img
+                src={isLightOn ? LightOnIcon : LightOffIcon}
+                alt="Light Toggle"
+                className="w-15 h-15"
+              />
+            </button>
+          </div>
+
           {showBriefing && (
             <AiBriefing
               className="absolute left-4 bottom-20 z-50"
@@ -311,7 +341,7 @@ const LeftContainer = ({
             />
           )}
 
-          <CoordinateDisplay 
+          <CoordinateDisplay
             position={currentPosition}
             className="absolute right-4 bottom-20 z-50"
           />
@@ -329,12 +359,19 @@ const LeftContainer = ({
 
           <div className="flex-1 relative min-h-0">
             {assemblyPart?.model && showAssembly ? (
-              <Canvas shadows camera={{ position: [4, 0, 4], fov: 50 }}>
+              <Canvas
+                shadows={isLightOn}
+                camera={{ position: [4, 0, 4], fov: 50 }}
+              >
                 <Suspense fallback={null}>
                   <Stage
                     environment="city"
-                    intensity={0.6}
+                    /* 💡 조명이 꺼지면 강도를 0으로, 켜지면 0.6으로 설정 */
+                    intensity={isLightOn ? 0.6 : 0}
+                    /* 💡 shadows가 false면 그림자가 생성되지 않음 */
+                    shadows={isLightOn ? "contact" : false}
                     contactShadow={false}
+                    adjustCamera={false}
                   >
                     <Center>
                       <AnimationPlayer
@@ -348,32 +385,45 @@ const LeftContainer = ({
                         // ✅ 4단계: 애니메이션 위치 업데이트 콜백 추가
                         onPositionUpdate={(meshName, position) => {
                           if (currentPart?.meshName === meshName) {
-                            console.log('🎬 슬라이딩 좌표 업데이트:', meshName, position);
+                            console.log(
+                              "🎬 슬라이딩 좌표 업데이트:",
+                              meshName,
+                              position,
+                            );
                             setCurrentPosition(position);
                           }
-                          setAnimatedPositions(prev => ({
+                          setAnimatedPositions((prev) => ({
                             ...prev,
-                            [meshName]: position
+                            [meshName]: position,
                           }));
                         }}
                       />
                     </Center>
                   </Stage>
                 </Suspense>
-                <OrbitControls makeDefault />
+                <OrbitControls
+                  makeDefault
+                  enablePan={true}
+                  panSpeed={1}
+                  screenSpacePanning={true}
+                />
                 <GizmoHelper alignment="top-right" margin={[80, 80]}>
-                  <GizmoViewport 
-                    axisColors={['#68A2FF', '#84EBAD', '#FF9191']}
+                  <GizmoViewport
+                    axisColors={["#68A2FF", "#84EBAD", "#FF9191"]}
                     labelColor="white"
                   />
                 </GizmoHelper>
               </Canvas>
             ) : currentPart?.model ? (
-              <Canvas shadows camera={{ position: [4, 0, 4], fov: 50 }}>
+              <Canvas
+                shadows={isLightOn}
+                camera={{ position: [4, 0, 4], fov: 50 }}
+              >
                 <Suspense fallback={null}>
                   <Stage
                     environment="city"
-                    intensity={0.6}
+                    intensity={isLightOn ? 0.6 : 0}
+                    shadows={isLightOn ? "contact" : false}
                     contactShadow={false}
                   >
                     <SinglePartModel
@@ -382,10 +432,17 @@ const LeftContainer = ({
                     />
                   </Stage>
                 </Suspense>
-                <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} />
+                <OrbitControls
+                  makeDefault
+                  autoRotate
+                  autoRotateSpeed={0.5}
+                  enablePan={true}
+                  panSpeed={1}
+                  screenSpacePanning={true}
+                />
                 <GizmoHelper alignment="top-right" margin={[80, 80]}>
-                  <GizmoViewport 
-                    axisColors={['#68A2FF', '#84EBAD', '#FF9191']}
+                  <GizmoViewport
+                    axisColors={["#68A2FF", "#84EBAD", "#FF9191"]}
                     labelColor="white"
                   />
                 </GizmoHelper>

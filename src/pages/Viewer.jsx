@@ -12,6 +12,8 @@ const Viewer = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const [isLightOn, setIsLightOn] = useState(true); // 조명 상태 추가
+
   // API 데이터 관련
   const [loading, setLoading] = useState(true);
   const [apiData, setApiData] = useState(null);
@@ -34,8 +36,7 @@ const Viewer = () => {
   const [modelName, setModelName] = useState("");
 
   // ✅ id 값 확인 로그 추가
-  useEffect(() => {
-  }, [id]);
+  useEffect(() => {}, [id]);
 
   // API 데이터 로딩
   useEffect(() => {
@@ -51,7 +52,6 @@ const Viewer = () => {
       setError(null);
 
       try {
-
         const data = await getModelDetail(id);
 
         if (!data) {
@@ -186,11 +186,12 @@ const Viewer = () => {
             </span>
           </div>
         </div>
+
         <ReportExporter
           captureRef={captureRef}
           currentPart={null}
           chatHistory={aiChats}
-          modelId={id}  // ✅ id가 제대로 있는지 확인
+          modelId={id} // ✅ id가 제대로 있는지 확인
           modelName={modelName}
         />
       </header>
@@ -214,6 +215,8 @@ const Viewer = () => {
               floatingMessages={floatingMessages}
               setFloatingMessages={setFloatingMessages}
               modelId={id}
+              isLightOn={isLightOn}
+              setIsLightOn={setIsLightOn}
             />
           </div>
 
