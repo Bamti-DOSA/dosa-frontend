@@ -4,6 +4,7 @@ import { migrateFromLocalStorage } from './utils/migrateNotes';
 import Landing from './pages/Landing';
 import StudyList from './pages/StudyList';
 import Viewer from './pages/Viewer';
+import Quiz from './pages/Quiz';
 
 function App() {
   useEffect(() => {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/study-list" element={<StudyList />} />
         <Route path="/viewer/:id" element={<Viewer />} />
+        <Route path="/quiz" element={<Quiz />} />
       </Routes>
     </Router>
   );

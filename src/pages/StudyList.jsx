@@ -7,6 +7,7 @@ import { getModels } from "../api/modelAPI";
 const StudyList = () => {
   const [allModels, setAllModels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeMenu, setActiveMenu] = useState("홈");
 
   useEffect(() => {
     const loadAllData = async () => {
@@ -33,7 +34,7 @@ const StudyList = () => {
 
   return (
     <div className="flex flex-row">
-      <SideBar />
+      <SideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="ml-[275px] px-[60px] py-[46px] w-full bg-gray-50">
         <div className="mt-[46px] t-24-semi">학습 페이지</div>
 
