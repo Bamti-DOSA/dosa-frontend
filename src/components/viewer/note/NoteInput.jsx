@@ -26,8 +26,6 @@ const NoteInput = ({
   const [activeMenu, setActiveMenu] = useState(null);
 
   const [categoryList, setCategoryList] = useState([
-    "부품 2 어쩌구",
-    "부품 3 어쩌구",
   ]);
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
