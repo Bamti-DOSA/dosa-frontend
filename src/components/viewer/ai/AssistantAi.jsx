@@ -1,14 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import {
-  Camera,
-  FolderPlus,
-  Plus,
-  ArrowUp,
-  X,
-  Link as LinkIcon,
-  File,
-} from "lucide-react";
-import IconPaperClip from "../../../assets/icons/icon-paperclip.svg";
+import { Camera, FolderPlus, Plus, ArrowUp, X, File } from "lucide-react";
 import { fetchAiResponse } from "../../../api/aiAPI";
 import { getChatsByModel, saveChat, getLastChatId } from "../../../api/aiDB";
 
@@ -17,14 +8,12 @@ const AssistantAi = ({
   modelId,
   currentChatId,
   setCurrentChatId,
+  messages,
+  setMessages,
 }) => {
-  const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // 💡 단일 selectedItem에서 배열 형태의 selectedFiles로 변경
   const [selectedFiles, setSelectedFiles] = useState([]);
-
   const [isLoading, setIsLoading] = useState(false);
   const [isDbLoading, setIsDbLoading] = useState(true);
 
@@ -43,43 +32,140 @@ const AssistantAi = ({
     [],
   );
 
-  // 초기 로드 로직 (기존 유지)
+  // 초기 로드 및 자동 채팅 생성 로직
+  // 모델이 바뀌거나 세션이 없을 때 초기화하는 로직
   useEffect(() => {
     const loadSession = async () => {
+      if (!modelId) return;
       setIsDbLoading(true);
+
       try {
         const savedChats = await getChatsByModel(modelId);
+
+        // 1. 기존 채팅이 있는 경우
         if (currentChatId) {
           const target = savedChats.find(
             (c) => Number(c.chatId) === Number(currentChatId),
           );
-          if (target) setMessages(target.messages);
-          else setMessages(initialMsg);
-        } else if (savedChats.length > 0) {
-          const lastSession = savedChats.sort(
+          if (target) {
+            setMessages(target.messages);
+            setIsDbLoading(false);
+            return;
+          }
+        }
+
+        // 2. 현재 ID는 없지만 모델에 속한 다른 채팅들이 있는 경우
+        if (savedChats.length > 0) {
+          const lastSession = [...savedChats].sort(
             (a, b) => b.lastUpdated - a.lastUpdated,
           )[0];
           setCurrentChatId(lastSession.chatId);
           setMessages(lastSession.messages);
         } else {
+          // 3. ✨ 완전히 새로운 모델이라 채팅이 아예 없는 경우 (createNewInitialChat)
+          const lastId = await getLastChatId();
+          const newId = (Number(lastId) || 0) + 1;
+
+          // 즉시 상태 반영
+          setCurrentChatId(newId);
           setMessages(initialMsg);
+
+          // DB에 초기화된 세션 저장
+          await saveChat({
+            chatId: newId,
+            modelId: String(modelId),
+            messages: initialMsg,
+            lastUpdated: Date.now(),
+          });
         }
       } catch (error) {
-        console.error(error);
+        console.error("세션 로드 에러:", error);
       } finally {
         setIsDbLoading(false);
       }
     };
-    if (modelId) loadSession();
-  }, [modelId, currentChatId, initialMsg, setCurrentChatId]);
+
+    loadSession();
+  }, [modelId, currentChatId, setCurrentChatId, setMessages, initialMsg]);
 
   // 스크롤 제어
   useEffect(() => {
     if (scrollRef.current)
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, isLoading, selectedFiles]);
+  }, [messages, isLoading]);
 
-  // 💡 파일 선택 핸들러 (여러 개 추가 가능)
+  const handleSendMessage = async () => {
+    // 1. 디버깅 로그: 전송 버튼을 눌렀을 때의 상태를 최우선으로 확인
+    console.log("🚀 전송 시도:", {
+      inputValue: !!inputValue.trim(),
+      modelName,
+      currentChatId,
+      isLoading,
+    });
+
+    // 2. 가드 클로저 최소화: 입력값이 있고, 로딩 중만 아니면 일단 보낸다!
+    if (!inputValue.trim() && selectedFiles.length === 0) return;
+    if (isLoading) return;
+
+    // modelName이나 chatId가 없으면 경고만 띄우고 중단 (완전 차단 대신 유연하게)
+    if (!modelName || !currentChatId) {
+      console.warn("⚠️ 필수 정보 누락으로 전송을 준비 중입니다.", {
+        modelName,
+        currentChatId,
+      });
+      // 만약 ID가 아직 null이라면 여기서 강제로 로드 세션을 다시 부를 수도 있습니다.
+      return;
+    }
+
+    const userText = inputValue;
+    const newUserMsg = {
+      id: Date.now(),
+      role: "user",
+      content: userText,
+      attachments: [...selectedFiles],
+    };
+
+    // UI 즉시 반영
+    const updatedWithUser = [...messages, newUserMsg];
+    setMessages(updatedWithUser);
+    setInputValue("");
+    setSelectedFiles([]);
+    setIsLoading(true);
+
+    try {
+      // DB 저장
+      await saveChat({
+        chatId: Number(currentChatId),
+        modelId: String(modelId),
+        messages: updatedWithUser,
+        lastUpdated: Date.now(),
+      });
+
+      // AI 응답 호출 (modelName이 무엇이든 일단 던짐)
+      const aiReply = await fetchAiResponse(modelName, userText);
+      const newAiMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: aiReply,
+      };
+
+      const finalMessages = [...updatedWithUser, newAiMsg];
+      setMessages(finalMessages);
+
+      // 최종 결과 저장
+      await saveChat({
+        chatId: Number(currentChatId),
+        modelId: String(modelId),
+        messages: finalMessages,
+        lastUpdated: Date.now(),
+      });
+    } catch (error) {
+      console.error("❌ 전송 실패:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFileChange = (e, type) => {
     const files = Array.from(e.target.files);
     files.forEach((file) => {
@@ -91,64 +177,97 @@ const AssistantAi = ({
             id: Date.now() + Math.random(),
             type,
             name: file.name,
-            preview: reader.result, // 이미지인 경우 Base64 데이터
+            preview: reader.result,
           },
         ]);
       };
       if (type === "image") reader.readAsDataURL(file);
-      else reader.onloadend(); // 일반 파일은 미리보기 없이 이름만 저장
+      else reader.onloadend();
     });
     setIsMenuOpen(false);
-    e.target.value = null; // 같은 파일 재선택 가능하도록 초기화
+    e.target.value = null;
   };
 
-  // 💡 첨부 파일 개별 삭제
   const removeFile = (id) => {
     setSelectedFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  const handleSendMessage = async () => {
-    if (
-      (!inputValue.trim() && selectedFiles.length === 0) ||
-      isLoading ||
-      !modelName
-    )
-      return;
+  // const handleSendMessage = async () => {
+  //   if (
+  //     (!inputValue.trim() && selectedFiles.length === 0) ||
+  //     isLoading ||
+  //     !modelName ||
+  //     !currentChatId
+  //   ) {
+  //     console.log("전송 차단됨:", {
+  //       inputValue: !inputValue.trim(),
+  //       isLoading,
+  //       modelName: !modelName,
+  //       currentChatId: !currentChatId,
+  //     }); // 이 로그를 추가해서 범인을 찾으세요!
+  //     return;
+  //   }
 
-    const userText = inputValue;
-    const newUserMsg = {
-      id: Date.now(),
-      role: "user",
-      content: userText,
-      attachments: selectedFiles, // 💡 단일 attachment에서 배열로 변경
-    };
+  //   // 1. 유효성 검사 (입력값이나 파일이 없으면 중단)
+  //   if (
+  //     (!inputValue.trim() && selectedFiles.length === 0) ||
+  //     isLoading ||
+  //     !modelName ||
+  //     !currentChatId
+  //   ) {
+  //     return;
+  //   }
 
-    const updatedWithUser = [...messages, newUserMsg];
-    setMessages(updatedWithUser);
+  //   const userText = inputValue;
+  //   const userAttachments = [...selectedFiles];
 
-    // DB 저장
-    await saveChat({
-      chatId: currentChatId,
-      modelId,
-      messages: updatedWithUser,
-    });
+  //   const newUserMsg = {
+  //     id: Date.now(),
+  //     role: "user",
+  //     content: userText,
+  //     attachments: userAttachments,
+  //   };
 
-    setInputValue("");
-    setSelectedFiles([]);
-    setIsLoading(true);
+  //   // UI 즉시 반영 및 입력창 초기화
+  //   const updatedWithUser = [...messages, newUserMsg];
+  //   setMessages(updatedWithUser);
+  //   setInputValue("");
+  //   setSelectedFiles([]);
+  //   setIsLoading(true);
 
-    const aiReply = await fetchAiResponse(modelName, userText);
-    const newAiMsg = {
-      id: Date.now() + 1,
-      role: "assistant",
-      content: aiReply,
-    };
+  //   try {
+  //     // 2. 유저 메시지 먼저 DB 저장
+  //     await saveChat({
+  //       chatId: Number(currentChatId),
+  //       modelId: String(modelId),
+  //       messages: updatedWithUser,
+  //       lastUpdated: Date.now(),
+  //     });
 
-    const finalMessages = [...updatedWithUser, newAiMsg];
-    setMessages(finalMessages);
-    await saveChat({ chatId: currentChatId, modelId, messages: finalMessages });
-    setIsLoading(false);
-  };
+  //     // 3. AI 응답 호출
+  //     const aiReply = await fetchAiResponse(modelName, userText);
+  //     const newAiMsg = {
+  //       id: Date.now() + 1,
+  //       role: "assistant",
+  //       content: aiReply,
+  //     };
+
+  //     // 4. AI 응답 포함 최종 상태 업데이트 및 DB 저장
+  //     const finalMessages = [...updatedWithUser, newAiMsg];
+  //     setMessages(finalMessages);
+
+  //     await saveChat({
+  //       chatId: Number(currentChatId),
+  //       modelId: String(modelId),
+  //       messages: finalMessages,
+  //       lastUpdated: Date.now(),
+  //     });
+  //   } catch (error) {
+  //     console.error("메시지 처리 중 오류 발생:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   if (isDbLoading)
     return (
@@ -175,7 +294,6 @@ const AssistantAi = ({
                   : "bg-white border border-bg-1 border-[1.5px] text-gray-9 rounded-[8px]"
               }`}
             >
-              {/* 💡 이미지 첨부물 렌더링 */}
               {msg.attachments?.some((a) => a.type === "image") && (
                 <div className="flex flex-wrap gap-2 mb-2 mt-1">
                   {msg.attachments
@@ -190,10 +308,7 @@ const AssistantAi = ({
                     ))}
                 </div>
               )}
-
               {msg.content}
-
-              {/* 💡 일반 파일/링크 첨부물 렌더링 */}
               {msg.attachments
                 ?.filter((a) => a.type !== "image")
                 .map((file) => (
@@ -217,7 +332,6 @@ const AssistantAi = ({
         )}
       </div>
 
-      {/* 💡 입력창 상단 파일 미리보기 영역 */}
       <div className="bg-white relative m-[25px] shrink-0">
         {selectedFiles.length > 0 && (
           <div className="absolute bottom-full left-0 mb-3 flex flex-wrap gap-2 p-2 bg-gray-50/80 backdrop-blur-sm rounded-xl border border-gray-100 w-full max-h-32 overflow-y-auto">
@@ -256,7 +370,10 @@ const AssistantAi = ({
           <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing)
+                handleSendMessage();
+            }}
             disabled={!modelName || isLoading}
             placeholder={
               !modelName ? "모델 정보를 불러오는 중..." : "메시지를 입력하세요."
@@ -275,7 +392,7 @@ const AssistantAi = ({
         </div>
 
         {isMenuOpen && (
-          <div className="absolute bottom-[60px] left-0 bg-white rounded-[12px] shadow-md border-gray-5 border-[1.5px] p-2 min-w-[180px] z-50 animate-in fade-in slide-in-from-bottom-2">
+          <div className="absolute bottom-[60px] left-0 bg-white rounded-[12px] shadow-md border-gray-5 border-[1.5px] p-2 min-w-[180px] z-50">
             <button
               onClick={() => imageInputRef.current.click()}
               className="flex items-center gap-3 w-full p-2 hover:bg-gray-1 rounded-[8px] b-14-reg-160 text-gray-6"
@@ -284,7 +401,7 @@ const AssistantAi = ({
             </button>
             <button
               onClick={() => fileInputRef.current.click()}
-              className="flex items-center gap-3 w-full p-2 hover:bg-gray-1 rounded-[8px]  b-14-reg-160 text-gray-6"
+              className="flex items-center gap-3 w-full p-2 hover:bg-gray-1 rounded-[8px] b-14-reg-160 text-gray-6"
             >
               <FolderPlus size={20} /> 파일 첨부
             </button>

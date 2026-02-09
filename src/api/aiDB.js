@@ -32,17 +32,23 @@ export const initDB = async () => {
 
 /** --- 채팅 관련 함수 --- **/
 export const saveChat = async (chatData) => {
-  if (!chatData.chatId) return;
+  const cid = Number(chatData.chatId);
+  if (!cid) {
+    console.error("❌ chatId가 유효하지 않습니다.");
+    return;
+  }
+
   const db = await initDB();
   try {
     await db.put(STORE_NAME, {
-      chatId: Number(chatData.chatId),
+      chatId: cid,
       modelId: String(chatData.modelId),
       messages: chatData.messages,
-      lastUpdated: Date.now(),
+      lastUpdated: chatData.lastUpdated || Date.now(),
     });
+    console.log(`[DB] ${cid}번 저장 성공`);
   } catch (e) {
-    console.error(e);
+    console.error("❌ DB Write Error:", e);
   }
 };
 
