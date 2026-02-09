@@ -269,8 +269,8 @@ export const mapModelData = async (apiData) => {
     if (assemblyModelUrl.startsWith("http")) {
       result.push({
         id: "assembly",
-        name: "전체 조립품",
-        description: "모든 부품이 조립된 완성 모델입니다.",
+        name: apiData.name ,
+        description: apiData.description || "모든 부품이 조립된 완성 모델입니다.",
         model: assemblyModelUrl,
         meshName: "assembly",
         isAssembly: true,
@@ -281,8 +281,8 @@ export const mapModelData = async (apiData) => {
         if (signedUrl && is3DModelFile(signedUrl)) {
           result.push({
             id: "assembly",
-            name: "전체 조립품",
-            description: "모든 부품이 조립된 완성 모델입니다.",
+            name: apiData.name ,
+            description: apiData.description || "모든 부품이 조립된 완성 모델입니다.",
             model: signedUrl,
             meshName: "assembly",
             isAssembly: true,
