@@ -20,6 +20,7 @@ const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [quizRecordModalOpen, setQuizRecordModalOpen] = useState(false);
+  const [showDevModal, setShowDevModal] = useState(false);
 
   const handleQuizClick = () => {
     setActiveMenu("퀴즈");
@@ -39,6 +40,11 @@ const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
   const handleQuizRecordClick = () => {
     setActiveMenu("퀴즈 기록");
     setQuizRecordModalOpen(true);
+  };
+
+  const handleWorkflowClick = () => {
+    setActiveMenu("워크 플로우");
+    setShowDevModal(true);
   };
 
   const navGroups = [
@@ -62,7 +68,7 @@ const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
       title: "추가 학습",
       items: [
         { name: "퀴즈", icon: Twitch, onClick: handleQuizClick },
-        { name: "워크 플로우", icon: TrendingUp },
+        { name: "워크 플로우", icon: TrendingUp, onClick: handleWorkflowClick },
       ],
     },
   ];
@@ -178,6 +184,31 @@ const SideBar = ({ activeMenu, setActiveMenu, allModels = [] }) => {
         }}
         allModels={allModels}
       />
+
+      {/* 개발중 모달 */}
+      {showDevModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl w-[400px] p-8 shadow-2xl">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🚧</div>
+              <h2 className="t-24-bold mb-3">개발 중입니다</h2>
+              <p className="text-gray-600 t-16-regular mb-6">
+                워크플로우 기능은 현재 개발 중입니다.<br />
+                곧 만나보실 수 있습니다!
+              </p>
+              <button
+                onClick={() => {
+                  setShowDevModal(false);
+                  setActiveMenu("홈");
+                }}
+                className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all t-16-semi"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
