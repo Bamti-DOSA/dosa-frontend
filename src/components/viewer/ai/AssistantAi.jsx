@@ -42,41 +42,35 @@ const AssistantAi = ({
       try {
         const savedChats = await getChatsByModel(modelId);
 
-        // 1. 기존 채팅이 있는 경우
         if (currentChatId) {
+          // 1. 현재 ID가 DB에 이미 존재하는지 확인
           const target = savedChats.find(
             (c) => Number(c.chatId) === Number(currentChatId),
           );
+
           if (target) {
+            // DB에 있으면 해당 메시지 로드
             setMessages(target.messages);
-            setIsDbLoading(false);
-            return;
+          } else {
+            // ✨ 핵심: DB에 없는데 ID가 활성화되었다면 '새 채팅' 클릭 상황임
+            // 과거 데이터를 불러오지 않고 즉시 UI를 초기화함
+            setMessages(initialMsg);
           }
-        }
-
-        // 2. 현재 ID는 없지만 모델에 속한 다른 채팅들이 있는 경우
-        if (savedChats.length > 0) {
-          const lastSession = [...savedChats].sort(
-            (a, b) => b.lastUpdated - a.lastUpdated,
-          )[0];
-          setCurrentChatId(lastSession.chatId);
-          setMessages(lastSession.messages);
         } else {
-          // 3. ✨ 완전히 새로운 모델이라 채팅이 아예 없는 경우 (createNewInitialChat)
-          const lastId = await getLastChatId();
-          const newId = (Number(lastId) || 0) + 1;
-
-          // 즉시 상태 반영
-          setCurrentChatId(newId);
-          setMessages(initialMsg);
-
-          // DB에 초기화된 세션 저장
-          await saveChat({
-            chatId: newId,
-            modelId: String(modelId),
-            messages: initialMsg,
-            lastUpdated: Date.now(),
-          });
+          // 2. 진입 시 ID가 없는 경우 (기존 로직 유지)
+          if (savedChats.length > 0) {
+            const lastSession = [...savedChats].sort(
+              (a, b) => b.lastUpdated - a.lastUpdated,
+            )[0];
+            setCurrentChatId(lastSession.chatId);
+            setMessages(lastSession.messages);
+          } else {
+            // 3. 기록이 아예 없는 신규 모델인 경우 (기존 로직 유지)
+            const lastId = await getLastChatId();
+            const newId = (Number(lastId) || 0) + 1;
+            setCurrentChatId(newId);
+            setMessages(initialMsg);
+          }
         }
       } catch (error) {
         console.error("세션 로드 에러:", error);
@@ -86,6 +80,7 @@ const AssistantAi = ({
     };
 
     loadSession();
+    // messages를 의존성 배열에 넣지 않아야 무한 루프가 발생하지 않습니다.
   }, [modelId, currentChatId, setCurrentChatId, setMessages, initialMsg]);
 
   // 스크롤 제어
