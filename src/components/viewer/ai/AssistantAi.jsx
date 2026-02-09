@@ -10,6 +10,7 @@ import {
 import IconPaperClip from "../../../assets/icons/icon-paperclip.svg";
 import { fetchAiResponse } from "../../../api/aiAPI";
 import { getChatsByModel, saveChat, getLastChatId } from "../../../api/aiDB";
+import { useMemo } from "react";
 
 const AssistantAi = ({
   modelName,
@@ -28,22 +29,33 @@ const AssistantAi = ({
   const imageInputRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // 2. 아예 데이터가 없을 때만 실행되는 초기 생성
-  const createNewInitialChat = async () => {
-    const lastId = await getLastChatId();
-    const newId = lastId + 1;
-    const initialMsg = [
+  const initialMsg = useMemo(
+    () => [
       {
         id: 1,
         role: "assistant",
         content: "안녕하세요! 무엇이 궁금하신가요?",
       },
-    ];
+    ],
+    [],
+  );
 
-    await saveChat({ chatId: newId, modelId, messages: initialMsg });
-    setCurrentChatId(newId);
-    setMessages(initialMsg);
-  };
+  // 2. 아예 데이터가 없을 때만 실행되는 초기 생성
+  // const createNewInitialChat = async () => {
+  //   const lastId = await getLastChatId();
+  //   const newId = lastId + 1;
+  //   const initialMsg = [
+  //     {
+  //       id: 1,
+  //       role: "assistant",
+  //       content: "안녕하세요! 무엇이 궁금하신가요?",
+  //     },
+  //   ];
+
+  //   await saveChat({ chatId: newId, modelId, messages: initialMsg });
+  //   setCurrentChatId(newId);
+  //   setMessages(initialMsg);
+  // };
 
   // 1. 초기 로드 및 chatId 변경 대응
   useEffect(() => {
@@ -53,33 +65,39 @@ const AssistantAi = ({
         const savedChats = await getChatsByModel(modelId);
 
         if (currentChatId) {
-          // 💡 부모(AiNote)가 준 ID가 DB에 있는지 확인
-          const target = savedChats.find((c) => c.chatId === currentChatId);
+          // 💡 ID 타입 불일치 방지를 위해 Number() 혹은 String()으로 통일
+          const target = savedChats.find(
+            (c) => Number(c.chatId) === Number(currentChatId),
+          );
+
           if (target) {
+            // DB에 데이터가 있는 기존 대화방
             setMessages(target.messages);
           } else {
-            // 💡 ID는 있지만 DB에 아직 없다면(방금 생성된 경우), 빈 배열로 시작
-            setMessages([]);
+            // 💡 여기가 핵심: ID는 넘어왔으나 DB에 없다면 "완전 새 채팅" 상태
+            // 이전 메시지 잔상을 지우고 인사말을 세팅합니다.
+            setMessages(initialMsg);
           }
         } else if (savedChats.length > 0) {
+          // 현재 선택된 ID가 없을 때 마지막 대화방 불러오기
           const lastSession = savedChats.sort(
             (a, b) => b.lastUpdated - a.lastUpdated,
           )[0];
           setCurrentChatId(lastSession.chatId);
           setMessages(lastSession.messages);
         } else {
-          await createNewInitialChat();
+          // 아예 아무 기록도 없을 때 (완전 초기)
+          setMessages(initialMsg);
         }
       } catch (error) {
         console.error("세션 로드 중 에러:", error);
       } finally {
-        // ✅ 어떤 경우에도 로딩 상태를 해제하여 화면을 보여줌
         setIsDbLoading(false);
       }
     };
 
     if (modelId) loadSession();
-  }, [modelId, currentChatId]);
+  }, [modelId, currentChatId, initialMsg, setCurrentChatId]);
 
   // 3. 스크롤 제어
   useEffect(() => {

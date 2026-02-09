@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Edit from "../../../assets/icons/icon-edit.svg";
-import { getChatsByModel } from "../../../api/aiDB";
+import { getChatsByModel, deleteChat } from "../../../api/aiDB"; // deleteChat 임포트 통합
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { deleteChat } from "../../../api/aiDB";
 
 const AiMenu = ({
   modelId,
@@ -20,9 +19,16 @@ const AiMenu = ({
     chatId: null,
   });
 
-  // 우클릭 핸들러
+  // 우클릭 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = () =>
+      setContextMenu((prev) => ({ ...prev, show: false }));
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
+
   const handleContextMenu = (e, chatId) => {
-    e.preventDefault(); // 브라우저 기본 메뉴 방지
+    e.preventDefault();
     setContextMenu({
       show: true,
       x: e.pageX,
@@ -34,34 +40,37 @@ const AiMenu = ({
   const handleDeleteChat = async () => {
     const targetId = contextMenu.chatId;
     if (!targetId) return;
-    alert("대화를 정말 삭제하시겠습니까?");
+
+    if (!window.confirm("대화를 정말 삭제하시겠습니까?")) return;
 
     try {
-      // 1. DB 삭제 시도
+      console.log("삭제 타겟 ID:", targetId, typeof targetId);
+      console.log("현재 활성 ID:", currentChatId, typeof currentChatId);
       const isDeleted = await deleteChat(targetId);
 
       if (isDeleted) {
-        // 2. ✅ UI 상태 업데이트 (이 코드가 있어야 화면에서 즉시 사라집니다)
-        // Number()를 사용하여 ID 타입을 맞춰주는 것이 중요합니다.
-        setChatSessions((prevSessions) =>
-          prevSessions.filter((chat) => Number(chat.id) !== Number(targetId)),
+        // 1. UI 목록 업데이트
+        setChatSessions((prev) =>
+          prev.filter((chat) => String(chat.id) !== String(targetId)),
         );
 
-        // 3. 만약 삭제한 채팅이 현재 선택된 채팅방이라면 선택 해제
-        if (Number(targetId) === Number(currentChatId)) {
-          onSelectChat(null);
-        }
+        const isViewingDeletedChat = String(targetId) === String(currentChatId);
 
-        console.log(`✅ UI에서 ${targetId}번 대화 삭제 완료`);
+        console.log("현재 보고 있는 채팅인가?:", isViewingDeletedChat);
+        // 2. 현재 보고 있는 방을 삭제했는지 체크 (타입 일치를 위해 String 변환)
+        if (isViewingDeletedChat) {
+          console.log("✅ 조건 일치! onNewChat()을 실행합니다.");
+          onNewChat();
+        }
       }
     } catch (error) {
-      console.error("삭제 과정 중 UI 업데이트 실패:", error);
+      console.error("삭제 실패:", error);
     } finally {
-      // 우클릭 메뉴 닫기
       setContextMenu({ ...contextMenu, show: false });
     }
   };
 
+  // 날짜 그룹핑 함수 (기존 로직 유지)
   const getGroupName = (chatDate) => {
     const today = new Date();
     const months = [
@@ -82,13 +91,12 @@ const AiMenu = ({
     return chatDate === todayStr ? "최근" : chatDate;
   };
 
+  // 데이터 로딩
   useEffect(() => {
     const loadHistory = async () => {
       if (!modelId) return;
-      const chats = await getChatsByModel(modelId);
-
-      const formattedChats = chats.map((chat) => {
-        const d = new Date(chat.lastUpdated || Date.now());
+      try {
+        const chats = await getChatsByModel(modelId);
         const months = [
           "Jan",
           "Feb",
@@ -103,33 +111,35 @@ const AiMenu = ({
           "Nov",
           "Dec",
         ];
-        const dateStr = `${d.getDate()}. ${months[d.getMonth()]}`;
 
-        const firstUserMsg = chat.messages?.find(
-          (m) => m.role === "user",
-        )?.content;
+        const formattedChats = chats.map((chat) => {
+          const d = new Date(chat.lastUpdated || Date.now());
+          const dateStr = `${d.getDate()}. ${months[d.getMonth()]}`;
+          const firstUserMsg = chat.messages?.find(
+            (m) => m.role === "user",
+          )?.content;
 
-        return {
-          ...chat,
-          id: chat.chatId,
-          date: dateStr,
-          title: firstUserMsg || "새로운 대화",
-        };
-      });
+          return {
+            ...chat,
+            id: chat.chatId,
+            date: dateStr,
+            title: firstUserMsg || "새로운 대화",
+          };
+        });
 
-      setChatSessions(
-        formattedChats.sort(
+        const sortedChats = formattedChats.sort(
           (a, b) => (b.lastUpdated || 0) - (a.lastUpdated || 0),
-        ),
-      );
+        );
+        setChatSessions(sortedChats);
 
-      // 초기 로드 시 모든 그룹 펼침
-      const initialOpenState = {};
-      formattedChats.forEach((chat) => {
-        const groupName = getGroupName(chat.date);
-        initialOpenState[groupName] = true;
-      });
-      setOpenGroups(initialOpenState);
+        const initialOpenState = {};
+        sortedChats.forEach((chat) => {
+          initialOpenState[getGroupName(chat.date)] = true;
+        });
+        setOpenGroups(initialOpenState);
+      } catch (err) {
+        console.error("채팅 목록 로드 실패:", err);
+      }
     };
 
     loadHistory();
@@ -151,27 +161,25 @@ const AiMenu = ({
     return b.localeCompare(a);
   });
 
-  const handleToggleGroup = (groupName) => {
-    setOpenGroups((prev) => ({
-      ...prev,
-      [groupName]: !prev[groupName],
-    }));
-  };
-
   return (
     <>
+      {/* 배경 레이어 (메뉴 닫기용) */}
       <div
-        onClick={onClose}
-        className="absolute inset-0 bg-transparent z-[9990]"
+        onClick={() => onClose()}
+        className="fixed inset-0 bg-transparent z-[9990]"
       />
-      <div className="absolute top-0 left-0 bottom-0 w-[260px] bg-[#F6F8F9] shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-[9999] overflow-y-auto border-r border-gray-100 animate-slide-in-left custom-scrollbar">
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-0 left-0 bottom-0 w-[260px] bg-[#F6F8F9] shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-[9999] overflow-y-auto border-r border-gray-100 animate-slide-in-left custom-scrollbar"
+      >
         <div className="p-5">
           <button
             onClick={() => {
-              onClose(true);
               onNewChat();
+              onClose();
             }}
-            className="b-16-med-120 text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2 mb-6"
+            className="b-16-med-120 text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2 mb-6 w-full"
           >
             <img src={Edit} alt="edit" className="w-4 h-4" /> 새로운 대화 시작
           </button>
@@ -185,65 +193,46 @@ const AiMenu = ({
           <div className="space-y-4">
             {groupKeys.map((groupName) => {
               const isOpen = openGroups[groupName];
-
               return (
                 <div key={groupName} className="select-none">
                   <div
-                    className="flex flex-row justify-between items-center cursor-pointer hover:bg-bg-1 rounded-md px-1 transition-colors"
-                    onClick={() => handleToggleGroup(groupName)}
+                    className="flex flex-row justify-between items-center cursor-pointer hover:bg-gray-200 rounded-md px-1 transition-colors"
+                    onClick={() =>
+                      setOpenGroups((prev) => ({
+                        ...prev,
+                        [groupName]: !prev[groupName],
+                      }))
+                    }
                   >
                     <div className="py-2 mb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
                       {groupName}
                     </div>
                     {isOpen ? (
-                      <ChevronUp size={18} className="text-gray-400" />
+                      <ChevronUp size={16} className="text-gray-400" />
                     ) : (
-                      <ChevronDown size={18} className="text-gray-400" />
+                      <ChevronDown size={16} className="text-gray-400" />
                     )}
                   </div>
 
                   {isOpen && (
-                    <div className="space-y-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                      {groupedChats[groupName].map((chat) => {
-                        // 💡 현재 활성화된 채팅방인지 확인
-                        const isSelected = chat.id === currentChatId;
-
-                        return (
-                          <button
-                            key={chat.id}
-                            onContextMenu={(e) => handleContextMenu(e, chat.id)} // 💡 우클릭 이벤트 연결
-                            onClick={() => {
-                              onSelectChat(chat.id);
-                              onClose();
-                            }}
-                            // 💡 선택 여부에 따라 배경색 조건부 렌더링
-                            className={`w-full text-left p-3 b-16-med-120 truncate transition-all rounded-[8px] ${
-                              isSelected
-                                ? "bg-bg-1 text-main-1 font-bold" // 현재 대화방 스타일
-                                : " text-gray-9 hover:bg-bg-1" // 일반 스타일
-                            }`}
-                          >
-                            {chat.title}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {contextMenu.show && (
-                    <div
-                      className="fixed bg-white border shadow-lg rounded-md py-1 z-[10000]"
-                      style={{ top: contextMenu.y, left: contextMenu.x }}
-                    >
-                      <button
-                        onClick={() => {
-                          handleDeleteChat(contextMenu.chatId);
-                          setContextMenu({ ...contextMenu, show: false });
-                        }}
-                        className="text-red-500 hover:bg-red-50 ..."
-                      >
-                        대화 삭제하기
-                      </button>
+                    <div className="space-y-1 mt-1">
+                      {groupedChats[groupName].map((chat) => (
+                        <button
+                          key={chat.id}
+                          onContextMenu={(e) => handleContextMenu(e, chat.id)}
+                          onClick={() => {
+                            onSelectChat(chat.id);
+                            onClose();
+                          }}
+                          className={`w-full text-left p-3 b-16-med-120 truncate transition-all rounded-[8px] ${
+                            String(chat.id) === String(currentChatId)
+                              ? "bg-bg-1 text-main-1 font-bold"
+                              : "text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {chat.title}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -252,6 +241,22 @@ const AiMenu = ({
           </div>
         </div>
       </div>
+
+      {/* 커스텀 우클릭 메뉴 */}
+      {contextMenu.show && (
+        <div
+          className="fixed bg-white border border-gray-200 shadow-xl rounded-lg py-2 z-[10001] min-w-[140px]"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()} // 메뉴 안 클릭 시 닫히지 않게
+        >
+          <button
+            onClick={handleDeleteChat}
+            className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+          >
+            대화 삭제하기
+          </button>
+        </div>
+      )}
     </>
   );
 };

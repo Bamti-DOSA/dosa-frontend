@@ -47,7 +47,7 @@ const AiNote = ({ onClose, onMaximize, modelId }) => {
           {
             id: Date.now(),
             role: "assistant",
-            content: `안녕하세요! ${formattedName || "제품"}에 대해 무엇을 도와드릴까요?`,
+            content: `안녕하세요! 무엇이 궁금하신가요?`,
           },
         ];
 
@@ -75,19 +75,22 @@ const AiNote = ({ onClose, onMaximize, modelId }) => {
     setIsDragging(true);
     const rect = noteRef.current.getBoundingClientRect();
     dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    if (e.target.closest('input') || e.target.closest('button')) return;
+    if (e.target.closest("input") || e.target.closest("button")) return;
     e.preventDefault();
     setIsDragging(true);
 
     if (isExpanded) {
-        setIsExpanded(false);
-        const currentX = e.clientX;
-        const currentY = e.clientY;
-        dragOffset.current = { x: 180, y: 24 }; 
-        setPosition({ x: currentX - 180, y: currentY - 24 });
+      setIsExpanded(false);
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      dragOffset.current = { x: 180, y: 24 };
+      setPosition({ x: currentX - 180, y: currentY - 24 });
     } else {
-        const rect = noteRef.current.getBoundingClientRect();
-        dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      const rect = noteRef.current.getBoundingClientRect();
+      dragOffset.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
     }
   };
 
