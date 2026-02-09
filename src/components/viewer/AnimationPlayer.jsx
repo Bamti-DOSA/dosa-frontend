@@ -1,131 +1,142 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useGLTF } from '@react-three/drei';
-import * as THREE from 'three';
+import React, { useRef, useEffect, useState } from "react";
+import { useGLTF } from "@react-three/drei";
+import * as THREE from "three";
 
-function AnimationPlayer({ url, currentFrame, totalFrames, selectedPartMesh }) {
+function AnimationPlayer({
+  url,
+  currentFrame,
+  totalFrames,
+  selectedPartMesh,
+  overrideMaterial,
+}) {
   const gltf = useGLTF(url);
   const mixerRef = useRef(null);
   const actionsRef = useRef([]);
-  const highlightedMeshRef = useRef(null);
-  const originalMaterialsRef = useRef(new Map());
+  const trueOriginalsRef = useRef(new Map()); // 모델의 순수 원본 재질 보관함
   const [availableMeshes, setAvailableMeshes] = useState([]);
 
+  // 1. 초기 로드: 원본 재질을 영구 보관하고 각 메쉬를 독립화합니다.
   useEffect(() => {
-    if (!gltf.animations || gltf.animations.length === 0) {
-      return;
-    }
+    if (!gltf.scene) return;
 
     const meshNames = [];
     gltf.scene.traverse((child) => {
       if (child.isMesh) {
         meshNames.push(child.name);
+
+        // 처음 로드될 때 딱 한 번만 진짜 원본 재질(백지 상태)을 저장합니다.
+        if (!trueOriginalsRef.current.has(child)) {
+          trueOriginalsRef.current.set(child, child.material.clone());
+        }
+
+        // 각 메쉬의 재질을 독립적으로 클론하여 다른 부품에 영향이 없도록 합니다.
+        child.material = child.material.clone();
       }
     });
     setAvailableMeshes(meshNames);
 
-    const mixer = new THREE.AnimationMixer(gltf.scene);
-    mixerRef.current = mixer;
-
-    const actions = [];
-    
-    gltf.animations.forEach((clip) => {
-      const action = mixer.clipAction(clip);
-      action.setLoop(THREE.LoopOnce);
-      action.clampWhenFinished = true;
-      action.play();
-      action.paused = true;
-      action.time = 0;
-      actions.push(action);
-    });
-
-    actionsRef.current = actions;
+    // 애니메이션 설정
+    if (gltf.animations && gltf.animations.length > 0) {
+      const mixer = new THREE.AnimationMixer(gltf.scene);
+      mixerRef.current = mixer;
+      actionsRef.current = gltf.animations.map((clip) => {
+        const action = mixer.clipAction(clip);
+        action.play();
+        action.paused = true;
+        return action;
+      });
+    }
 
     return () => {
-      mixer.stopAllAction();
-      mixer.uncacheRoot(gltf.scene);
+      if (mixerRef.current) mixerRef.current.stopAllAction();
     };
   }, [gltf]);
 
+  // 2. 통합 로직: 하얀색(원본) -> 파란색(선택) -> 재질(적용) 흐름 제어
+  useEffect(() => {
+    if (!gltf.scene) return;
+
+    gltf.scene.traverse((child) => {
+      if (child.isMesh) {
+        const isTarget = selectedPartMesh
+          ? isNameMatch(child.name, selectedPartMesh)
+          : false;
+        const originalMat = trueOriginalsRef.current.get(child);
+
+        // A. 특정 부품이 선택된 상태
+        if (selectedPartMesh) {
+          if (isTarget) {
+            // 재질 데이터가 있으면 재질 적용, 없으면 파란색 강조
+            if (overrideMaterial) {
+              applyPropsToMaterial(child.material, overrideMaterial);
+            } else {
+              applyBlueHighlight(child.material);
+            }
+          } else {
+            // 선택되지 않은 부품은 무조건 원본(백지) 복구
+            if (originalMat) child.material.copy(originalMat);
+          }
+        }
+        // B. 전체 모델 모드 (부품 선택이 해제된 상태)
+        else {
+          if (overrideMaterial) {
+            applyPropsToMaterial(child.material, overrideMaterial);
+          } else if (originalMat) {
+            child.material.copy(originalMat);
+          }
+        }
+        child.material.needsUpdate = true;
+      }
+    });
+  }, [selectedPartMesh, overrideMaterial, gltf.scene]);
+
+  // 3. 애니메이션 프레임 제어 (기존 유지)
   useEffect(() => {
     if (!mixerRef.current || actionsRef.current.length === 0) return;
 
     const normalizedTime = Math.max(0, Math.min(1, currentFrame / totalFrames));
-
     actionsRef.current.forEach((action) => {
       const clip = action.getClip();
-      const targetTime = normalizedTime * clip.duration;
-      const clampedTime = Math.min(targetTime, clip.duration - 0.001);
-
-      action.time = clampedTime;
+      action.time = normalizedTime * clip.duration;
       action.paused = true;
     });
-
     mixerRef.current.update(0);
-
   }, [currentFrame, totalFrames]);
 
-  useEffect(() => {
-    if (highlightedMeshRef.current && originalMaterialsRef.current.has(highlightedMeshRef.current)) {
-      const originalMaterial = originalMaterialsRef.current.get(highlightedMeshRef.current);
-      highlightedMeshRef.current.material = originalMaterial;
-      highlightedMeshRef.current = null;
-    }
+  // --- 헬퍼 함수 정의 ---
 
-    if (!selectedPartMesh) return;
+  // 파란색 강조 적용
+  const applyBlueHighlight = (mat) => {
+    mat.color.set(0xaaddff);
+    mat.emissive.set(0x4ba3ff);
+    mat.emissiveIntensity = 0.8;
+    mat.metalness = 0.5;
+    mat.roughness = 0.2;
+  };
 
-    let targetMesh = null;
-    const meshList = [];
-    gltf.scene.traverse((child) => {
-      if (child.isMesh) meshList.push(child);
-    });
+  // 재질 속성 적용 및 강조 광택 제거
+  const applyPropsToMaterial = (mat, props) => {
+    if (props.color) mat.color.set(props.color);
+    if (props.metalness !== undefined) mat.metalness = props.metalness;
+    if (props.roughness !== undefined) mat.roughness = props.roughness;
 
-    targetMesh = meshList.find(child => child.name === selectedPartMesh);
+    // 재질이 적용되면 파란색 발광(emissive) 효과를 끕니다.
+    mat.emissive.set(0x000000);
+    mat.emissiveIntensity = 0;
+  };
 
-    if (!targetMesh) {
-      targetMesh = meshList.find(child => 
-        child.name.toLowerCase() === selectedPartMesh.toLowerCase()
-      );
-    }
+  // 이름 매칭 로직
+  const isNameMatch = (meshName, searchName) => {
+    if (!meshName || !searchName) return false;
+    const clean = (s) =>
+      s
+        .toLowerCase()
+        .replace(/[-_\s.]/g, "")
+        .replace(/\d+$/, "");
+    return clean(meshName) === clean(searchName);
+  };
 
-    if (!targetMesh) {
-      targetMesh = meshList.find(child => {
-        const childBase = child.name.replace(/\.\d+$/, '');
-        return childBase === selectedPartMesh;
-      });
-    }
-
-    if (!targetMesh) {
-      const searchClean = selectedPartMesh.toLowerCase().replace(/[-_\s]/g, '');
-      targetMesh = meshList.find(child => {
-        const childClean = child.name.toLowerCase().replace(/[-_\s]/g, '').replace(/\.\d+$/, '');
-        return childClean === searchClean;
-      });
-    }
-
-    if (!targetMesh) {
-      const searchClean = selectedPartMesh.toLowerCase().replace(/[-_\s]/g, '');
-      targetMesh = meshList.find(child => {
-        const childClean = child.name.toLowerCase().replace(/[-_\s]/g, '').replace(/\.\d+$/, '');
-        return childClean.startsWith(searchClean) && childClean !== searchClean;
-      });
-    }
-
-    if (targetMesh) {
-      if (!originalMaterialsRef.current.has(targetMesh)) {
-        originalMaterialsRef.current.set(targetMesh, targetMesh.material.clone());
-      }
-
-      const highlightMaterial = targetMesh.material.clone();
-      highlightMaterial.emissive = new THREE.Color(0x4BA3FF);
-      highlightMaterial.emissiveIntensity = 0.6;
-      highlightMaterial.color = new THREE.Color(0xAADDFF);
-      
-      targetMesh.material = highlightMaterial;
-      highlightedMeshRef.current = targetMesh;
-    }
-
-  }, [selectedPartMesh, gltf.scene, availableMeshes]);
-
+  // 4. 모델 렌더링
   return <primitive object={gltf.scene} />;
 }
 
