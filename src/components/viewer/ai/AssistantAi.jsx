@@ -235,7 +235,13 @@ const AssistantAi = ({
                   ? "bg-bg-2 text-gray-9 rounded-[8px]"
                   : "bg-white border border-bg-1 border-[1.5px] text-gray-9 rounded-[8px]"
               }`}
-              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+              style={{
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                userSelect: "text", // 텍스트 선택 허용
+                WebkitUserSelect: "text", // 사파리 등 구형 브라우저 대응
+                cursor: "auto", // 텍스트 위에서는 커서가 I-비 모양으로 바뀌도록 설정
+              }}
             >
               {msg.attachments
                 ?.filter((a) => a.type === "image")
