@@ -337,22 +337,17 @@ const PdfModal = ({ isOpen, onClose, allModels }) => {
         {!loading && pdfs.length > 0 && (
           <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 shrink-0">
             <div className="flex items-center justify-between d-12-reg text-gray-500">
-              <div className="flex gap-4">
-                <span>
-                  관련 모델{" "}
-                  <strong className="text-gray-700">
-                    {Object.keys(groupedPdfs).length}
-                  </strong>
-                  개
-                </span>
-                <span className="w-[1px] h-3 bg-gray-200 self-center" />
-                <span>
-                  전체 pdf 기록{" "}
-                  <strong className="text-gray-700">{pdfs.length}</strong>개
-                </span>
-              </div>
-              <span className="text-gray-400">
-                최근 다운로드: {new Date().toLocaleDateString()}
+              <span>
+                관련 모델{" "}
+                <strong className="text-gray-700">
+                  {Object.keys(groupedPdfs).length}
+                </strong>
+                개
+              </span>
+              <span className="w-[1px] h-3 bg-gray-200 self-center" />
+              <span>
+                전체 pdf 기록{" "}
+                <strong className="text-gray-700">{pdfs.length}</strong>개
               </span>
             </div>
           </div>

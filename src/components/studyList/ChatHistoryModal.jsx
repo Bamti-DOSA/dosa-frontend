@@ -180,7 +180,7 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
               {Object.entries(groupedChats).map(([modelId, chats]) => (
                 <div
                   key={modelId}
-                  className="rounded-xl overflow-hidden bg-gray-1 shadow-sm"
+                  className="rounded-xl overflow-hidden bg-gray-1"
                 >
                   <div
                     onClick={() => toggleFolder(modelId)}
@@ -237,28 +237,23 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
         {!loading && Object.keys(groupedChats).length > 0 && !selectedChat && (
           <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 shrink-0">
             <div className="flex items-center justify-between d-12-reg text-gray-500">
-              <div className="flex gap-4">
-                <span>
-                  관련 모델{" "}
-                  <strong className="text-gray-700">
-                    {Object.keys(groupedChats).length}
-                  </strong>
-                  개
-                </span>
-                <span className="w-[1px] h-3 bg-gray-200 self-center" />
-                <span>
-                  전체 세션{" "}
-                  <strong className="text-gray-700">
-                    {Object.values(groupedChats).reduce(
-                      (acc, curr) => acc + curr.length,
-                      0,
-                    )}
-                  </strong>
-                  개
-                </span>
-              </div>
-              <span className="text-gray-400">
-                오늘: {new Date().toLocaleDateString()}
+              <span>
+                관련 모델{" "}
+                <strong className="text-gray-700">
+                  {Object.keys(groupedChats).length}
+                </strong>
+                개
+              </span>
+              <span className="w-[1px] h-3 bg-gray-200 self-center" />
+              <span>
+                전체 세션{" "}
+                <strong className="text-gray-700">
+                  {Object.values(groupedChats).reduce(
+                    (acc, curr) => acc + curr.length,
+                    0,
+                  )}
+                </strong>
+                개
               </span>
             </div>
           </div>

@@ -218,22 +218,17 @@ const NotesModal = ({ isOpen, onClose, allModels }) => {
         {!loading && notes.length > 0 && (
           <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 shrink-0">
             <div className="flex items-center justify-between d-12-reg text-gray-500">
-              <div className="flex gap-4">
-                <span>
-                  관련 모델{" "}
-                  <span className="text-gray-700">
-                    {Object.keys(groupedNotes).length}
-                  </span>
-                  개
-                </span>
-                <span className="w-[1px] h-3 bg-gray-200 self-center" />
-                <span>
-                  전체 메모{" "}
-                  <sapan className="text-gray-700">{notes.length}</sapan>개
-                </span>
-              </div>
-              <span className="text-gray-400">
-                최근 작성: {new Date().toLocaleDateString()}
+              <span>
+                관련 모델{" "}
+                <strong className="text-gray-700">
+                  {Object.keys(groupedNotes).length}
+                </strong>
+                개
+              </span>
+              <span className="w-[1px] h-3 bg-gray-200 self-center" />
+              <span>
+                전체 메모{" "}
+                <strong className="text-gray-700">{notes.length}</strong>개
               </span>
             </div>
           </div>
