@@ -230,11 +230,12 @@ const AssistantAi = ({
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] px-4 py-2 mx-[20px] my-[12px] b-16-med leading-relaxed ${
+              className={`max-w-[85%] px-4 py-2 mx-[20px] my-[12px] b-16-med leading-relaxed chat-message ${
                 msg.role === "user"
                   ? "bg-bg-2 text-gray-9 rounded-[8px]"
                   : "bg-white border border-bg-1 border-[1.5px] text-gray-9 rounded-[8px]"
               }`}
+              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
             >
               {msg.attachments
                 ?.filter((a) => a.type === "image")
