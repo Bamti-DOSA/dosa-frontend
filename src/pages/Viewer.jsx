@@ -15,6 +15,8 @@ const Viewer = () => {
 
   const [isLightOn, setIsLightOn] = useState(true); // 조명 상태 추가
 
+  const [currentPartForReport, setCurrentPartForReport] = useState(null);
+
   // API 데이터 관련
   const [loading, setLoading] = useState(true);
   const [apiData, setApiData] = useState(null);
@@ -256,7 +258,7 @@ const Viewer = () => {
 
         <ReportExporter
           captureRef={captureRef}
-          currentPart={null}
+          currentPart={currentPartForReport}
           modelId={id} // ✅ id가 제대로 있는지 확인
           modelName={modelName}
           chatHistory={pdfSummary}
@@ -274,7 +276,7 @@ const Viewer = () => {
             ref={captureRef}
             className="flex-1 h-full min-w-0 transition-all duration-300 ease-out"
           >
-            <LeftContainer
+            <LeftContainer onPartSelect={(part) => setCurrentPartForReport(part)}
               apiData={apiData}
               showAiNote={showAiNote}
               setShowAiNote={setShowAiNote}
