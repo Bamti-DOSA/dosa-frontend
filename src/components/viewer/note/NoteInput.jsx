@@ -94,10 +94,7 @@ const NoteInput = ({
     if (!content.trim() && attachments.length === 0) return;
     const finalCategory =
       selectedCategory === "카테고리" ? "기타" : selectedCategory;
-    const finalType =
-      selectedType === "종류" || selectedType === "일반"
-        ? "general"
-        : "important";
+    const finalType = selectedType === "important" ? "important" : "general";
 
     onSave({
       title,
