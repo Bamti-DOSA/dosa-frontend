@@ -42,9 +42,10 @@ const PartItem = ({ part, isSelected, onClick }) => {
         width: "97px",
         height: "97px",
         borderRadius: "8px",
-        borderWidth: "0.915px",
+        borderWidth: "1.5px",
         background: "#E4EBF1", // 기본 배경색 고정
-        borderColor: isHovered ? "#B5C0C6" : isSelected ? "#4ade80" : "#E5E7EB",
+        borderColor: isSelected ? "#4981AD" : "transparent",
+        boxShadow: isSelected ? "0 4px 6px -1px rgb(0 0 0 / 0.1)" : "none",
       }}
       className="group flex-shrink-0 overflow-hidden transition-all duration-300 flex items-center justify-center relative shadow-sm pointer-events-auto"
     >
