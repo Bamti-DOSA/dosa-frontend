@@ -243,10 +243,17 @@ const Viewer = () => {
       <header className="h-16 shrink-0 flex items-center justify-between px-6 z-10">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/study-list")}
-            className="p-2 rounded hover:bg-gray-200 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation(); // 부모 요소로의 이벤트 전파 방지
+              navigate("/study-list", { replace: true }); // 히스토리 스택 꼬임 방지
+            }}
+            className="p-2 rounded-[8px] hover:bg-main-1/30 transition-colors"
           >
-            <Menu className="text-gray-700" size={24} strokeWidth={2.5} />
+            <ChevronLeft
+              className="text-gray-700"
+              size={24}
+              strokeWidth={2.5}
+            />
           </button>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gray-5 rounded-lg"></div>
@@ -276,7 +283,8 @@ const Viewer = () => {
             ref={captureRef}
             className="flex-1 h-full min-w-0 transition-all duration-300 ease-out"
           >
-            <LeftContainer onPartSelect={(part) => setCurrentPartForReport(part)}
+            <LeftContainer
+              onPartSelect={(part) => setCurrentPartForReport(part)}
               apiData={apiData}
               showAiNote={showAiNote}
               setShowAiNote={setShowAiNote}
