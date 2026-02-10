@@ -124,11 +124,11 @@ const QuizRecordModal = ({ isOpen, onClose, allModels }) => {
       onClick={onClose}
     >
       <div
-        className="bg-gray-50 rounded-lg w-[1000px] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl"
+        className="bg-white rounded-lg w-[1000px] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-100">
           <h2 className="t-20-semi text-gray-900">퀴즈 기록</h2>
           <button
             onClick={onClose}
@@ -160,12 +160,12 @@ const QuizRecordModal = ({ isOpen, onClose, allModels }) => {
                 return (
                   <div
                     key={modelId}
-                    className="border border-gray-200 rounded-lg overflow-hidden"
+                    className="rounded-lg bg-gray-100 overflow-hidden"
                   >
                     {/* 폴더 헤더 */}
                     <div
                       onClick={() => toggleFolder(modelId)}
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-acc-blue-light/10 cursor-pointer transition-colors"
+                      className="flex items-center gap-3 p-4  hover:bg-violet-400/10 cursor-pointer transition-colors"
                     >
                       {isExpanded ? (
                         <ChevronDown className="w-5 h-5 text-gray-600" />
@@ -174,7 +174,7 @@ const QuizRecordModal = ({ isOpen, onClose, allModels }) => {
                       )}
                       <Folder className="w-5 h-5 text-violet-500" />
                       <div className="flex-1">
-                        <div className="b-16-med text-gray-900">
+                        <div className="b-16-semi text-gray-900">
                           {modelInfo.name}
                         </div>
                         <div className="d-12-reg text-gray-500">
@@ -195,7 +195,7 @@ const QuizRecordModal = ({ isOpen, onClose, allModels }) => {
                             <div key={record.id}>
                               <div
                                 onClick={() => handleRecordClick(record)}
-                                className="p-4 hover:bg-acc-blue-light/5 cursor-pointer transition-colors"
+                                className="p-4 hover:bg-gray-100 cursor-pointer transition-colors"
                               >
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1 flex items-start gap-3">
@@ -340,10 +340,25 @@ const QuizRecordModal = ({ isOpen, onClose, allModels }) => {
 
         {/* 푸터 통계 */}
         {!loading && records.length > 0 && (
-          <div className="px-6 py-3 border-t border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between d-12-reg text-gray-600">
-              <span>총 {Object.keys(groupedRecords).length}개 모델</span>
-              <span>전체 퀴즈 기록 {records.length}개</span>
+          <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 shrink-0">
+            <div className="flex items-center justify-between d-12-reg text-gray-500">
+              <div className="flex gap-4">
+                <span>
+                  관련 모델{" "}
+                  <strong className="text-gray-700">
+                    {Object.keys(groupedRecords).length}
+                  </strong>
+                  개
+                </span>
+                <span className="w-[1px] h-3 bg-gray-200 self-center" />
+                <span>
+                  전체 퀴즈 기록{" "}
+                  <strong className="text-gray-700">{records.length}</strong>개
+                </span>
+              </div>
+              <span className="text-gray-400">
+                최근 응시: {new Date().toLocaleDateString()}
+              </span>
             </div>
           </div>
         )}

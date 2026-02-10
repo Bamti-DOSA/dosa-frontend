@@ -241,7 +241,7 @@ const PdfModal = ({ isOpen, onClose, allModels }) => {
                     {/* 폴더 헤더 */}
                     <div
                       onClick={() => toggleFolder(modelId)}
-                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-acc-blue-light/10 cursor-pointer transition-colors"
+                      className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-acc-green-light/10 cursor-pointer transition-colors"
                     >
                       {isExpanded ? (
                         <ChevronDown className="w-5 h-5 text-gray-600" />
@@ -335,10 +335,25 @@ const PdfModal = ({ isOpen, onClose, allModels }) => {
 
         {/* 푸터 통계 */}
         {!loading && pdfs.length > 0 && (
-          <div className="px-6 py-3 border-t border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between t-13-regular text-gray-600">
-              <span>총 {Object.keys(groupedPdfs).length}개 모델</span>
-              <span>전체 PDF {pdfs.length}개</span>
+          <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 shrink-0">
+            <div className="flex items-center justify-between d-12-reg text-gray-500">
+              <div className="flex gap-4">
+                <span>
+                  관련 모델{" "}
+                  <strong className="text-gray-700">
+                    {Object.keys(groupedPdfs).length}
+                  </strong>
+                  개
+                </span>
+                <span className="w-[1px] h-3 bg-gray-200 self-center" />
+                <span>
+                  전체 pdf 기록{" "}
+                  <strong className="text-gray-700">{pdfs.length}</strong>개
+                </span>
+              </div>
+              <span className="text-gray-400">
+                최근 다운로드: {new Date().toLocaleDateString()}
+              </span>
             </div>
           </div>
         )}
