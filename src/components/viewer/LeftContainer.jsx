@@ -29,6 +29,8 @@ import { getChatsByModel } from "../../api/aiDB";
 import LightOnIcon from "../../assets/icons/icon-light-on.svg";
 import LightOffIcon from "../../assets/icons/icon-light-off.svg";
 
+import { useCallback } from "react";
+
 // ✅ 수정된 중심 좌표 계산 함수
 async function calculateModelCenter(modelPath) {
   if (!modelPath) {
@@ -245,6 +247,35 @@ const LeftContainer = ({
     setActiveMaterial(materialProps);
   };
 
+  const handlePositionUpdate = useCallback(
+    (meshName, position) => {
+      // 현재 선택된 부품의 좌표만 실시간으로 업데이트
+      if (currentPart?.meshName === meshName) {
+        const isDifferent =
+          Math.abs(currentPosition.x - position.x) > 0.01 ||
+          Math.abs(currentPosition.y - position.y) > 0.01 ||
+          Math.abs(currentPosition.z - position.z) > 0.01;
+
+        if (isDifferent) {
+          setCurrentPosition(position);
+        }
+      }
+
+      // 전체 부품 위치 저장은 렌더링 최적화를 위해 비교 후 업데이트
+      setAnimatedPositions((prev) => {
+        if (
+          prev[meshName] &&
+          Math.abs(prev[meshName].x - position.x) < 0.01 &&
+          Math.abs(prev[meshName].y - position.y) < 0.01
+        ) {
+          return prev;
+        }
+        return { ...prev, [meshName]: position };
+      });
+    },
+    [currentPart, currentPosition],
+  );
+
   // ✅ 4단계: currentFrame이 변경될 때 현재 선택된 부품의 슬라이딩 좌표 업데이트
   useEffect(() => {
     if (currentPart && !currentPart.isAssembly && currentFrame > 0) {
@@ -393,34 +424,35 @@ const LeftContainer = ({
                           currentPart?.isAssembly ? null : currentPart?.meshName
                         }
                         overrideMaterial={activeMaterial}
-                        onPositionUpdate={(meshName, position) => {
-                          // 1. 현재 선택된 부품의 좌표 실시간 업데이트
-                          if (currentPart?.meshName === meshName) {
-                            setCurrentPosition((prevPos) => {
-                              // 아주 미세한 차이라도 있으면 업데이트 (오차 범위를 0.0001로 줄임)
-                              const isChanged =
-                                Math.abs(prevPos.x - position.x) > 0.0001 ||
-                                Math.abs(prevPos.y - position.y) > 0.0001 ||
-                                Math.abs(prevPos.z - position.z) > 0.0001;
+                        // onPositionUpdate={(meshName, position) => {
+                        //   // 1. 현재 선택된 부품의 좌표 실시간 업데이트
+                        //   if (currentPart?.meshName === meshName) {
+                        //     setCurrentPosition((prevPos) => {
+                        //       // 아주 미세한 차이라도 있으면 업데이트 (오차 범위를 0.0001로 줄임)
+                        //       const isChanged =
+                        //         Math.abs(prevPos.x - position.x) > 0.0001 ||
+                        //         Math.abs(prevPos.y - position.y) > 0.0001 ||
+                        //         Math.abs(prevPos.z - position.z) > 0.0001;
 
-                              return isChanged ? { ...position } : prevPos;
-                            });
-                          }
+                        //       return isChanged ? { ...position } : prevPos;
+                        //     });
+                        //   }
 
-                          // 2. 전체 애니메이션 좌표 저장 (함수형 업데이트로 클로저 문제 해결)
-                          setAnimatedPositions((prev) => {
-                            const prevPos = prev[meshName];
-                            if (
-                              prevPos &&
-                              Math.abs(prevPos.x - position.x) < 0.0001 &&
-                              Math.abs(prevPos.y - position.y) < 0.0001 &&
-                              Math.abs(prevPos.z - position.z) < 0.0001
-                            ) {
-                              return prev;
-                            }
-                            return { ...prev, [meshName]: { ...position } };
-                          });
-                        }}
+                        //   // 2. 전체 애니메이션 좌표 저장 (함수형 업데이트로 클로저 문제 해결)
+                        //   setAnimatedPositions((prev) => {
+                        //     const prevPos = prev[meshName];
+                        //     if (
+                        //       prevPos &&
+                        //       Math.abs(prevPos.x - position.x) < 0.0001 &&
+                        //       Math.abs(prevPos.y - position.y) < 0.0001 &&
+                        //       Math.abs(prevPos.z - position.z) < 0.0001
+                        //     ) {
+                        //       return prev;
+                        //     }
+                        //     return { ...prev, [meshName]: { ...position } };
+                        //   });
+                        // }}
+                        onPositionUpdate={handlePositionUpdate}
                       />
                     </Center>
                   </Stage>
