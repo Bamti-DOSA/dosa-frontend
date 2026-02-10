@@ -47,6 +47,7 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
         }
       });
       setGroupedChats(newGroupedData);
+      setExpandedFolders(new Set()); // 초기화 시 폴더 닫힘
     } catch (error) {
       console.error(error);
     } finally {
@@ -74,13 +75,13 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
         className="bg-white rounded-xl w-[850px] max-h-[85vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 헤더 영역 */}
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-100 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-            {/* ⬅️ 뒤로가기 버튼 추가: selectedChat이 있을 때만 표시 */}
             {selectedChat && (
               <button
                 onClick={() => setSelectedChat(null)}
-                className="mr-1 p-1 hover:bg-bg-2 rounded-lg transition-colors group"
+                className="mr-1 p-1 hover:bg-gray-200 rounded-lg transition-colors group"
               >
                 <ArrowLeft className="w-6 h-6 text-acc-blue" />
               </button>
@@ -91,16 +92,21 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
           >
             <X className="w-6 h-6 text-gray-400" />
           </button>
         </div>
 
         {/* 본문 영역 */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30 y-scroll-hidden">
-          {selectedChat ? (
-            /* 💬 상세보기 뷰: 이미지 렌더링 추가 */
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30">
+          {loading ? (
+            /* ⏳ 로딩 상태 */
+            <div className="text-center py-20 text-gray-500">
+              <div className="animate-pulse">대화 내역을 불러오는 중...</div>
+            </div>
+          ) : selectedChat ? (
+            /* 💬 대화 상세보기 */
             <div className="p-6 space-y-6">
               {selectedChat.messages.map((msg, idx) => (
                 <div
@@ -115,12 +121,13 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
                     }`}
                   >
                     <div
-                      className={`text-[11px] mb-1 font-bold uppercase tracking-wider ${msg.role === "user" ? "text-white/70" : "text-gray-400"}`}
+                      className={`text-[11px] mb-1 font-bold uppercase tracking-wider ${
+                        msg.role === "user" ? "text-white/70" : "text-gray-400"
+                      }`}
                     >
                       {msg.role === "user" ? "You" : "Assistant"}
                     </div>
 
-                    {/* 📸 이미지 첨부물 표시 (AssistantAi와 동일한 로직) */}
                     {msg.attachments?.some((a) => a.type === "image") && (
                       <div className="flex flex-wrap gap-2 mb-3 mt-1">
                         {msg.attachments
@@ -140,7 +147,6 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
                       {msg.content}
                     </div>
 
-                    {/* 📁 일반 파일 첨부물 표시 */}
                     {msg.attachments
                       ?.filter((a) => a.type !== "image")
                       .map((file, i) => (
@@ -160,13 +166,21 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
                 </div>
               ))}
             </div>
+          ) : Object.keys(groupedChats).length === 0 ? (
+            /* 📥 데이터가 없을 때 (NotesModal 스타일) */
+            <div className="text-center py-32">
+              <MessageSquare className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500 b-16-semi">
+                저장된 대화 내역이 없습니다.
+              </p>
+            </div>
           ) : (
-            /* 📂 목록 뷰 (기존과 동일) */
+            /* 📂 폴더 목록 뷰 */
             <div className="p-6 space-y-3">
               {Object.entries(groupedChats).map(([modelId, chats]) => (
                 <div
                   key={modelId}
-                  className=" rounded-xl overflow-hidden bg-gray-1 "
+                  className="rounded-xl overflow-hidden bg-gray-1 shadow-sm"
                 >
                   <div
                     onClick={() => toggleFolder(modelId)}
@@ -189,7 +203,7 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
                   </div>
 
                   {expandedFolders.has(modelId) && (
-                    <div className="divide-y divide-gray-50 border-t border-gray-50">
+                    <div className="divide-y divide-gray-50 border-t border-gray-50 bg-white">
                       {chats.map((chat) => (
                         <div
                           key={chat.chatId}
@@ -219,8 +233,8 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
           )}
         </div>
 
-        {/* 푸터 통계 */}
-        {!loading && Object.keys(groupedChats).length > 0 && (
+        {/* 푸터 영역 */}
+        {!loading && Object.keys(groupedChats).length > 0 && !selectedChat && (
           <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 shrink-0">
             <div className="flex items-center justify-between d-12-reg text-gray-500">
               <div className="flex gap-4">
@@ -233,7 +247,7 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
                 </span>
                 <span className="w-[1px] h-3 bg-gray-200 self-center" />
                 <span>
-                  전체 대화 세션{" "}
+                  전체 세션{" "}
                   <strong className="text-gray-700">
                     {Object.values(groupedChats).reduce(
                       (acc, curr) => acc + curr.length,
@@ -244,7 +258,7 @@ const ChatHistoryModal = ({ isOpen, onClose, allModels }) => {
                 </span>
               </div>
               <span className="text-gray-400">
-                최근 업데이트: {new Date().toLocaleDateString()}
+                오늘: {new Date().toLocaleDateString()}
               </span>
             </div>
           </div>
