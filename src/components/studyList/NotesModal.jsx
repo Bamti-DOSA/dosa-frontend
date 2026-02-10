@@ -118,14 +118,11 @@ const NotesModal = ({ isOpen, onClose, allModels }) => {
                 const isExpanded = expandedFolders.has(modelId);
 
                 return (
-                  <div
-                    key={modelId}
-                    className="border border-gray-200 rounded-lg overflow-hidden"
-                  >
+                  <div key={modelId} className="rounded-lg overflow-hidden">
                     {/* 폴더 헤더 */}
                     <div
                       onClick={() => toggleFolder(modelId)}
-                      className="flex items-center gap-3 p-4 bg-gray-1 hover:bg-bg-1 cursor-pointer transition-colors"
+                      className="flex items-center gap-3 p-4 bg-gray-1 hover:bg-acc-blue-light/10 cursor-pointer transition-colors"
                     >
                       {isExpanded ? (
                         <ChevronDown className="w-5 h-5 text-gray-600" />
@@ -155,7 +152,7 @@ const NotesModal = ({ isOpen, onClose, allModels }) => {
                             <div
                               key={note.id}
                               onClick={() => handleNoteClick(note)}
-                              className="p-4 hover:bg-gray-1 cursor-pointer transition-colors"
+                              className="p-4 hover:bg-acc-blue-light/5 cursor-pointer transition-colors"
                             >
                               <div className="flex justify-between items-start mb-2">
                                 <div className="flex-1 flex items-start gap-3">
