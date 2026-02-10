@@ -332,7 +332,7 @@ const LeftContainer = ({
   // }, [apiData]); // selectedId를 의존성에 넣지 않아야 무한 루프를 방지합니다.
 
   return (
-    <div className="bg-white w-full h-full flex flex-row p-4 gap-1 relative overflow-hidden">
+    <div className="bg-white w-full h-full flex flex-row p-4 gap-1 relative overflow-hidden rounded-[8px]">
       {showAiNote && (
         <AiNote
           onClose={() => setShowAiNote(false)}
