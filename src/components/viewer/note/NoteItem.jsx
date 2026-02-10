@@ -34,7 +34,7 @@ const NoteItem = ({
     >
       {/* 타임라인 점 */}
       {isFirst && (
-        <div className="absolute left-0 top-0 mt-1 w-[26px] h-[26px] rounded-full bg-main-1 z-10"></div>
+        <div className="absolute left-[2.5px] top-0 mt-1 w-[20px] h-[20px] rounded-full bg-main-1 z-10"></div>
       )}
 
       {/* 노트 카드 본문 */}
@@ -46,7 +46,7 @@ const NoteItem = ({
         }`}
       >
         <div className="flex justify-between items-center">
-          <span className="text-[12px] text-[#818181] font-medium tracking-tight">
+          <span className="d-12-med text-[#818181] font-medium tracking-tight">
             {note.date}
           </span>
 
@@ -69,7 +69,7 @@ const NoteItem = ({
                     setIsMenuOpen(false);
                     onEdit && onEdit(note.id);
                   }}
-                  className="block w-full text-left rounded-sm px-2 py-2 text-xs font-medium text-black hover:bg-bg-2 transition-colors"
+                  className="block w-full text-left rounded-sm px-2 py-2 d-12-med text-black hover:bg-bg-2 transition-colors"
                 >
                   수정
                 </button>
@@ -79,7 +79,7 @@ const NoteItem = ({
                     setIsMenuOpen(false);
                     onDelete && onDelete(note.id);
                   }}
-                  className="block w-full text-left rounded-sm px-2 py-2  text-xs font-medium text-black hover:bg-bg-2 transition-colors"
+                  className="block w-full text-left rounded-sm px-2 py-2 d-12-med text-black hover:bg-bg-2 transition-colors"
                 >
                   삭제
                 </button>
@@ -94,7 +94,7 @@ const NoteItem = ({
           </h3>
         )}
 
-        <p className="text-[16px] text-[#676767] leading-relaxed mb-4 break-words line-clamp-2 whitespace-pre-wrap">
+        <p className="b-16-reg-154 text-[#676767] leading-relaxed mb-4 break-words line-clamp-2 whitespace-pre-wrap">
           {note.content}
         </p>
 

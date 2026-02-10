@@ -162,7 +162,7 @@ const NoteInput = ({
         ) : (
           <button
             onClick={onOpenAiNote}
-            className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition-all cursor-pointer ${
               isAiNoteOpen
                 ? "bg-ai-gradient text-white"
                 : "bg-white border border-ai-gradient text-main-1 hover:bg-blue-50"
