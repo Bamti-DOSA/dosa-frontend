@@ -46,9 +46,7 @@ const NoteItemList = ({
   return (
     <div className="h-full flex flex-col">
       {/* 리스트 영역 */}
-      <div
-        className="flex-1 overflow-y-auto p-5 no-scrollbar bg-[#FFF]"
-      >
+      <div className="flex-1 overflow-y-auto p-5 no-scrollbar bg-[#FFF]">
         {sortedNotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full pb-20 text-gray-400 b-14-med text-center leading-relaxed animate-fade-in">
             <p>노트를 추가하여</p>
