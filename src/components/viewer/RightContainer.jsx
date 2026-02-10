@@ -64,6 +64,8 @@ const RightContainer = ({
   setAiChats,
   modelId,
   modelName,
+  onMessagesUpdate,
+  setPdfSummary,
 }) => {
   const [notes, setNotes] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -378,6 +380,8 @@ const RightContainer = ({
             setCurrentChatId={setCurrentChatId}
             messages={messages} // 추가
             setMessages={setMessages} // 추가
+            setPdfSummary={setPdfSummary}
+            onMessagesUpdate={onMessagesUpdate}
           />
         )}
       </div>

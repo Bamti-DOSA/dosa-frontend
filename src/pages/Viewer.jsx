@@ -7,6 +7,7 @@ import ReportExporter from "../components/viewer/report/ReportExporter";
 import { getModelDetail } from "../api/modelAPI";
 import { getModelById } from "../api/modelAPI";
 import { formatSystemName } from "../utils/formatModelName";
+import { fetchAiBriefing } from "../api/aiAPI";
 
 const Viewer = () => {
   const { id } = useParams();
@@ -34,6 +35,53 @@ const Viewer = () => {
   const captureRef = useRef(null);
 
   const [modelName, setModelName] = useState("");
+
+  const [currentChatMessages, setCurrentChatMessages] = useState([]);
+
+  //PDF관련
+  const [pdfSummary, setPdfSummary] = useState([]);
+
+  useEffect(() => {
+    const generateReportBriefing = async () => {
+      // 유의미한 메시지가 쌓였을 때만 실행 (로그상 24개 등 기준)
+      if (currentChatMessages.length < 2) return;
+
+      try {
+        const response = await fetchAiBriefing(currentChatMessages);
+
+        if (response && response.summary) {
+          const parsed =
+            typeof response.summary === "string"
+              ? JSON.parse(response.summary)
+              : response.summary;
+
+          // 보고서Exporter에 전달할 배열 형식으로 저장
+          setPdfSummary([
+            {
+              title: parsed.title || "종합 학습 분석 브리핑",
+              items: parsed.items || [],
+              date: new Date().toLocaleDateString(),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("보고서용 브리핑 생성 실패:", error);
+      }
+    };
+
+    generateReportBriefing();
+  }, [currentChatMessages]);
+
+  // 2. 새로운 요약을 배열에 추가하는 함수 (선택 사항: 더 명확한 관리를 위해)
+  const handleAddPdfSummary = (newSummary) => {
+    setPdfSummary((prev) => [
+      ...prev,
+      {
+        ...newSummary,
+        date: new Date().toLocaleDateString(), // 날짜 추가
+      },
+    ]);
+  };
 
   // ✅ id 값 확인 로그 추가
   useEffect(() => {}, [id]);
@@ -136,6 +184,25 @@ const Viewer = () => {
     if (tab) setActiveTab(tab);
   };
 
+  // const briefingHistory = aiChats
+  //   .map((chat) => {
+  //     try {
+  //       // AiBriefing.jsx와 동일한 파싱 로직 적용
+  //       const parsed =
+  //         typeof chat.summary === "string"
+  //           ? JSON.parse(chat.summary)
+  //           : chat.summary;
+  //       return {
+  //         title: parsed?.title || chat.title || "학습 브리핑",
+  //         items: parsed?.items || [],
+  //         date: new Date(chat.lastUpdated).toLocaleDateString(),
+  //       };
+  //     } catch (e) {
+  //       return null;
+  //     }
+  //   })
+  //   .filter(Boolean);
+
   // 로딩 중
   if (loading) {
     return (
@@ -190,9 +257,9 @@ const Viewer = () => {
         <ReportExporter
           captureRef={captureRef}
           currentPart={null}
-          chatHistory={aiChats}
           modelId={id} // ✅ id가 제대로 있는지 확인
           modelName={modelName}
+          chatHistory={pdfSummary}
         />
       </header>
 
@@ -246,6 +313,8 @@ const Viewer = () => {
               setAiChats={setAiChats}
               modelId={id}
               modelName={modelName}
+              onMessagesUpdate={setCurrentChatMessages}
+              setPdfSummary={setPdfSummary}
             />
           </div>
 
