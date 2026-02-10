@@ -20,19 +20,23 @@ function AnimationPlayer({
   useEffect(() => {
     if (!gltf.scene) return;
 
-    const meshNames = [];
     gltf.scene.traverse((child) => {
       if (child.isMesh) {
-        meshNames.push(child.name);
-
+        // 1. 원본 재질 보관 (이미 되어 있다면 패스)
         if (!trueOriginalsRef.current.has(child)) {
           trueOriginalsRef.current.set(child, child.material.clone());
         }
 
+        // 2. ✨ 핵심: 각 mesh에게 고유한 material 객체를 새로 할당
+        // 이렇게 해야 한 놈을 색칠할 때 다른 놈이 안 변합니다.
         child.material = child.material.clone();
+
+        // 만약 재질이 배열(Multi-material)인 경우를 대비한 안전장치
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((m) => m.clone());
+        }
       }
     });
-    setAvailableMeshes(meshNames);
 
     // 애니메이션 설정
     if (gltf.animations && gltf.animations.length > 0) {
@@ -78,31 +82,61 @@ function AnimationPlayer({
   };
 
   // --- 메인 로직 ---
+  // useEffect(() => {
+  //   if (!gltf.scene) return;
+
+  //   gltf.scene.traverse((child) => {
+  //     if (child.isMesh) {
+  //       const isTarget = selectedPartMesh
+  //         ? isNameMatch(child.name, selectedPartMesh)
+  //         : false;
+
+  //       if (selectedPartMesh) {
+  //         if (isTarget) {
+  //           if (overrideMaterial) {
+  //             applyPropsToMaterial(child.material, overrideMaterial);
+  //           } else {
+  //             applyBlueHighlight(child.material);
+  //           }
+  //         } else {
+  //           applyDefaultGrey(child.material);
+  //         }
+  //       } else {
+  //         if (overrideMaterial) {
+  //           applyPropsToMaterial(child.material, overrideMaterial);
+  //         } else {
+  //           applyDefaultGrey(child.material);
+  //         }
+  //       }
+  //       child.material.needsUpdate = true;
+  //     }
+  //   });
+  // }, [selectedPartMesh, overrideMaterial, gltf.scene]);
+
+  // AnimationPlayer.jsx 내부
   useEffect(() => {
     if (!gltf.scene) return;
 
+    console.log("--- 🧐 현재 선택된 부품명(Prop):", selectedPartMesh); // 현재 선택된 부품 이름
+
     gltf.scene.traverse((child) => {
       if (child.isMesh) {
+        // 🚨 여기서 모든 메쉬의 이름을 출력합니다.
+        console.log("🤖 모델 내 메쉬 이름:", child.name);
+
         const isTarget = selectedPartMesh
           ? isNameMatch(child.name, selectedPartMesh)
           : false;
 
-        if (selectedPartMesh) {
-          if (isTarget) {
-            if (overrideMaterial) {
-              applyPropsToMaterial(child.material, overrideMaterial);
-            } else {
-              applyBlueHighlight(child.material);
-            }
-          } else {
-            applyDefaultGrey(child.material);
-          }
-        } else {
+        if (isTarget) {
+          console.log("✅ 매칭 성공! 이 부품에 색을 칠합니다:", child.name);
           if (overrideMaterial) {
             applyPropsToMaterial(child.material, overrideMaterial);
           } else {
-            applyDefaultGrey(child.material);
+            applyBlueHighlight(child.material);
           }
+        } else {
+          applyDefaultGrey(child.material);
         }
         child.material.needsUpdate = true;
       }
@@ -145,14 +179,19 @@ function AnimationPlayer({
   // 이름 매칭 로직
   const isNameMatch = (meshName, searchName) => {
     if (!meshName || !searchName) return false;
-    const clean = (s) =>
-      s
-        .toLowerCase()
-        .replace(/[-_\s.]/g, "")
-        .replace(/\d+$/, "");
-    return clean(meshName) === clean(searchName);
-  };
 
+    // 소문자로 바꾸고 공백/기호만 제거 (숫자는 유지!)
+    const clean = (s) => s.toLowerCase().replace(/[-_\s.]/g, "");
+
+    const cleanedMesh = clean(meshName); // 예: part_3_1 -> part31
+    const cleanedSearch = clean(searchName); // 예: part_3 -> part3
+
+    // 1. 이름이 완전히 같거나
+    // 2. meshName이 searchName으로 시작하는 경우 (예: part31은 part3에 포함됨)
+    return (
+      cleanedMesh === cleanedSearch || cleanedMesh.startsWith(cleanedSearch)
+    );
+  };
   // 4. 모델 렌더링
   return <primitive object={gltf.scene} />;
 }
