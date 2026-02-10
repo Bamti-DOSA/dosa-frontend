@@ -30,25 +30,25 @@ const Landing = () => {
           top: "20%", // 피그마 가이드 상단 여백
         }}
       >
-        <h1 className="text-[48px] text-[#4981AD] font-bold mb-6 tracking-tighter">
+        <h1 className="text-[48px] text-[#4981AD] font-bold mb-6 tracking-tighter mb-[72px]">
           SIMVEX
         </h1>
 
-        <p className="text-[32px] text-[#262729] mb-10 max-w-2xl leading-relaxed break-keep font-light">
+        <p className="b-32-light text-[#262729] mb-10 max-w-2xl leading-relaxed break-keep">
           공학 분야 학생 및 연구자들을 위한{" "}
           <span className="font-bold text-[#1A1A1A]">3D 시각화</span>
           <br />
           시뮬레이션 기반 학습/연구개발 종합 소프트웨어
         </p>
 
-        <p className="text-[14px] text-[#5F6368] mb-20 max-w-2xl leading-relaxed break-keep font-normal">
+        <p className="b-14-reg-160 text-[#5F6368] mb-20 max-w-2xl leading-relaxed break-keep font-normal">
           내장되어있는 다양한 전공 내용을 종합하여 나만의 새로운 융합지식과
           융합기술을 개발해보세요!
         </p>
 
         <button
           onClick={() => navigate("/study-list")}
-          className="px-[32px] py-[16px] bg-[#AEC1EC] text-white font-extrabold rounded-[100px] active:scale-95"
+          className="px-[32px] py-[16px] bg-[#AEC1EC] hover:bg-main-2 text-white t-20-bold rounded-[100px] active:scale-95"
         >
           SIMVEX 시작하기
         </button>
