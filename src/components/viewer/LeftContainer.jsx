@@ -119,6 +119,8 @@ function SinglePartModel({ modelPath, overrideMaterial }) {
 }
 
 const LeftContainer = ({
+  onPartSelect,
+  partsData,
   apiData,
   showAiNote,
   setShowAiNote,
@@ -210,6 +212,9 @@ const LeftContainer = ({
 
     const selectedPart = transformedParts.find((p) => p.id === partId);
 
+    if (onPartSelect) {
+      onPartSelect(selectedPart || null); // 선택 해제 시 null 전달
+    }
     if (selectedPart && selectedPart.model) {
       console.log("📍 선택된 부품의 중심 좌표 계산 시작:", selectedPart.name);
 
