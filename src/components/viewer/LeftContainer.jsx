@@ -205,8 +205,12 @@ const LeftContainer = ({
   const assemblyPart = transformedParts.find((p) => p.isAssembly);
 
   const handleReset = () => setCurrentFrame(0);
-  const handleFrameChange = (frame) => setCurrentFrame(frame);
-
+  const handleFrameChange = (frame) => {
+    const roundedFrame = Math.round(frame);
+    if (currentFrame !== roundedFrame) {
+      setCurrentFrame(roundedFrame);
+    }
+  };
   // ✅ 3단계: 부품 선택 시 좌표 업데이트
   const handlePartSelect = async (partId) => {
     console.log("🎯 부품 선택:", partId);
@@ -390,27 +394,31 @@ const LeftContainer = ({
                         }
                         overrideMaterial={activeMaterial}
                         onPositionUpdate={(meshName, position) => {
+                          // 1. 현재 선택된 부품의 좌표 실시간 업데이트
                           if (currentPart?.meshName === meshName) {
-                            // 💡 [수정] 현재 좌표와 새로 들어온 좌표가 다를 때만 업데이트 (무한루프 방지)
-                            if (
-                              Math.abs(currentPosition.x - position.x) >
-                                0.001 ||
-                              Math.abs(currentPosition.y - position.y) >
-                                0.001 ||
-                              Math.abs(currentPosition.z - position.z) > 0.001
-                            ) {
-                              setCurrentPosition(position);
-                            }
+                            setCurrentPosition((prevPos) => {
+                              // 아주 미세한 차이라도 있으면 업데이트 (오차 범위를 0.0001로 줄임)
+                              const isChanged =
+                                Math.abs(prevPos.x - position.x) > 0.0001 ||
+                                Math.abs(prevPos.y - position.y) > 0.0001 ||
+                                Math.abs(prevPos.z - position.z) > 0.0001;
+
+                              return isChanged ? { ...position } : prevPos;
+                            });
                           }
-                          // animatedPositions도 마찬가지로 값이 변했는지 체크 후 업데이트 하거나,
-                          // 렌더링에 직접적인 영향을 주지 않는다면 useRef를 사용하는 것이 좋습니다.
+
+                          // 2. 전체 애니메이션 좌표 저장 (함수형 업데이트로 클로저 문제 해결)
                           setAnimatedPositions((prev) => {
+                            const prevPos = prev[meshName];
                             if (
-                              JSON.stringify(prev[meshName]) ===
-                              JSON.stringify(position)
-                            )
+                              prevPos &&
+                              Math.abs(prevPos.x - position.x) < 0.0001 &&
+                              Math.abs(prevPos.y - position.y) < 0.0001 &&
+                              Math.abs(prevPos.z - position.z) < 0.0001
+                            ) {
                               return prev;
-                            return { ...prev, [meshName]: position };
+                            }
+                            return { ...prev, [meshName]: { ...position } };
                           });
                         }}
                       />
