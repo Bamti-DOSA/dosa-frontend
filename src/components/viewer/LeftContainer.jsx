@@ -148,6 +148,8 @@ const LeftContainer = ({
   // ✅ 4단계: 슬라이딩 된 좌표를 저장할 state 추가
   const [animatedPositions, setAnimatedPositions] = useState({});
 
+  const [detailHeight, setDetailHeight] = useState(200);
+
   const [briefingData, setBriefingData] = useState(null);
   useEffect(() => {
     const loadBriefing = async () => {
@@ -348,6 +350,7 @@ const LeftContainer = ({
         />
       )}
 
+      {/* 왼쪽 부품 리스트 (사이드바) */}
       <div className="w-[110px] h-full flex flex-col shrink-0 z-20 pt-2">
         <PartList
           parts={transformedParts}
@@ -356,48 +359,15 @@ const LeftContainer = ({
         />
       </div>
 
-      <div className="flex-1 flex flex-col gap-3 min-w-0">
-        <div className="flex-[7.5] bg-white rounded-2xl relative overflow-hidden flex flex-col">
-          {/* 💡 여기에 조명 버튼 배치 (좌표축 근처) */}
-          <div className="absolute -top-4 right-2 z-50 flex flex-col gap-2">
-            <button
-              onClick={() => setIsLightOn(!isLightOn)}
-              className="w-14 h-14 mt-1 flex items-center justify-center hover:bg-white transition-all"
-              title={isLightOn ? "조명 끄기" : "조명 켜기"}
-            >
-              <img
-                src={isLightOn ? LightOnIcon : LightOffIcon}
-                alt="Light Toggle"
-                className="w-15 h-15"
-              />
-            </button>
-          </div>
-
-          {showBriefing && (
-            <AiBriefing
-              className="absolute left-4 bottom-20 z-50"
-              onClose={() => setShowBriefing(false)}
-              data={briefingData}
-            />
-          )}
-
-          <CoordinateDisplay
-            position={currentPosition}
-            className="absolute right-4 bottom-20 z-50"
-          />
-
-          <button
-            onClick={() => setShowBriefing(!showBriefing)}
-            className="absolute bottom-8 left-4 w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-all z-50"
-          >
-            <img
-              src={showBriefing ? AiBriefingIcon : AiNotBriefingIcon}
-              alt="AI Briefing"
-              className="w-8 h-8"
-            />
-          </button>
-
-          <div className="flex-1 relative min-h-0">
+      {/* 메인 작업 영역 */}
+      <div className="flex-1 relative h-full flex flex-col overflow-hidden">
+        {/* ✅ 3, 4번 해결: 모델 영역의 높이를 (전체 - 설명창높이)로 설정하여 겹침 방지 및 슬라이더 노출 */}
+        <div
+          style={{ height: `calc(100% - ${detailHeight}px)` }}
+          className="relative w-full transition-all duration-300 ease-out bg-white rounded-t-2xl overflow-hidden"
+        >
+          {/* 3D 캔버스 (이 영역 안에서만 그려짐) */}
+          <div className="absolute inset-0 z-0">
             {assemblyPart?.model && showAssembly ? (
               <Canvas
                 shadows={isLightOn}
@@ -406,11 +376,8 @@ const LeftContainer = ({
                 <Suspense fallback={null}>
                   <Stage
                     environment="city"
-                    /* 💡 조명이 꺼지면 강도를 0으로, 켜지면 0.6으로 설정 */
                     intensity={isLightOn ? 0.6 : 0}
-                    /* 💡 shadows가 false면 그림자가 생성되지 않음 */
                     shadows={isLightOn ? "contact" : false}
-                    contactShadow={false}
                     adjustCamera={true}
                   >
                     <Center>
@@ -422,20 +389,29 @@ const LeftContainer = ({
                           currentPart?.isAssembly ? null : currentPart?.meshName
                         }
                         overrideMaterial={activeMaterial}
-                        // ✅ 4단계: 애니메이션 위치 업데이트 콜백 추가
                         onPositionUpdate={(meshName, position) => {
                           if (currentPart?.meshName === meshName) {
-                            console.log(
-                              "🎬 슬라이딩 좌표 업데이트:",
-                              meshName,
-                              position,
-                            );
-                            setCurrentPosition(position);
+                            // 💡 [수정] 현재 좌표와 새로 들어온 좌표가 다를 때만 업데이트 (무한루프 방지)
+                            if (
+                              Math.abs(currentPosition.x - position.x) >
+                                0.001 ||
+                              Math.abs(currentPosition.y - position.y) >
+                                0.001 ||
+                              Math.abs(currentPosition.z - position.z) > 0.001
+                            ) {
+                              setCurrentPosition(position);
+                            }
                           }
-                          setAnimatedPositions((prev) => ({
-                            ...prev,
-                            [meshName]: position,
-                          }));
+                          // animatedPositions도 마찬가지로 값이 변했는지 체크 후 업데이트 하거나,
+                          // 렌더링에 직접적인 영향을 주지 않는다면 useRef를 사용하는 것이 좋습니다.
+                          setAnimatedPositions((prev) => {
+                            if (
+                              JSON.stringify(prev[meshName]) ===
+                              JSON.stringify(position)
+                            )
+                              return prev;
+                            return { ...prev, [meshName]: position };
+                          });
                         }}
                       />
                     </Center>
@@ -444,7 +420,6 @@ const LeftContainer = ({
                 <OrbitControls
                   makeDefault
                   enablePan={true}
-                  panSpeed={1}
                   screenSpacePanning={true}
                 />
                 <GizmoHelper alignment="top-right" margin={[80, 80]}>
@@ -464,54 +439,89 @@ const LeftContainer = ({
                     environment="city"
                     intensity={isLightOn ? 0.6 : 0}
                     shadows={isLightOn ? "contact" : false}
-                    contactShadow={false}
                   >
                     <SinglePartModel
                       modelPath={currentPart.model}
                       overrideMaterial={activeMaterial}
-                      // meshName={currentPart.name}
                     />
                   </Stage>
                 </Suspense>
-                <OrbitControls
-                  makeDefault
-                  autoRotate
-                  autoRotateSpeed={0.5}
-                  enablePan={true}
-                  panSpeed={1}
-                  screenSpacePanning={true}
-                />
-                <GizmoHelper alignment="top-right" margin={[80, 80]}>
-                  <GizmoViewport
-                    axisColors={["#68A2FF", "#84EBAD", "#FF9191"]}
-                    labelColor="white"
-                  />
-                </GizmoHelper>
+                <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} />
               </Canvas>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
-                모델을 불러오는 중...
+                모델 로딩 중...
               </div>
             )}
           </div>
 
-          {assemblyPart?.model && showAssembly && (
-            <div className="w-full bg-white py-3 px-6 shrink-0">
-              <AnimationSlider
-                currentFrame={currentFrame}
-                totalFrames={totalFrames}
-                onFrameChange={handleFrameChange}
-                onReset={handleReset}
-                modelUrl={assemblyPart.model}
+          {/* 조명 버튼 (우측 상단 고정) */}
+          <div className="absolute top-2 right-2 z-50">
+            <button
+              onClick={() => setIsLightOn(!isLightOn)}
+              className="w-14 h-14 flex items-center justify-center transition-all hover:scale-105"
+            >
+              <img
+                src={isLightOn ? LightOnIcon : LightOffIcon}
+                className="w-12 h-12"
+                alt="light"
               />
+            </button>
+          </div>
+
+          {/* ✅ 2번 해결: 좌표랑 브리핑 버튼을 모델 영역 하단(설명창 바로 위)으로 배치 */}
+          {/* 브리핑 상세창 */}
+          <div className="absolute left-4 bottom-24 z-50 transition-all duration-300">
+            {showBriefing && (
+              <AiBriefing
+                onClose={() => setShowBriefing(false)}
+                data={briefingData}
+              />
+            )}
+          </div>
+
+          {/* 좌표값 표시 */}
+          <div className="absolute right-4 bottom-10 z-50 transition-all duration-300">
+            <CoordinateDisplay position={currentPosition} />
+          </div>
+
+          {/* 브리핑 아이콘 버튼 */}
+          <button
+            onClick={() => setShowBriefing(!showBriefing)}
+            className="absolute left-4 bottom-12 z-50 transition-all duration-300 hover:scale-110"
+          >
+            <img
+              src={showBriefing ? AiBriefingIcon : AiNotBriefingIcon}
+              className="w-8 h-8"
+              alt="ai"
+            />
+          </button>
+
+          {/* ✅ 4번 해결: 슬라이더를 모델 영역의 맨 하단에 absolute로 고정 */}
+          {assemblyPart?.model && showAssembly && (
+            <div className="absolute left-0 right-0 bottom-2 px-6 pb-2 z-40">
+              <div className="bg-white/60 backdrop-blur-md">
+                <AnimationSlider
+                  currentFrame={currentFrame}
+                  totalFrames={totalFrames}
+                  onFrameChange={handleFrameChange}
+                  onReset={handleReset}
+                  modelUrl={assemblyPart.model}
+                />
+              </div>
             </div>
           )}
         </div>
 
-        <div className="flex-[2.5] min-h-[160px] pt-2">
+        {/* ✅ 1번 해결: 설명창 영역 (좌우 여백을 없애기 위해 absolute가 아닌 flex 구조의 일부로 배치) */}
+        <div
+          style={{ height: `${detailHeight}px` }}
+          className="w-full shrink-0 z-50"
+        >
           <PartDetail
             selectedPart={currentPart}
             onMaterialSelect={handleMaterialSelect}
+            onHeightChange={(newHeight) => setDetailHeight(newHeight)}
           />
         </div>
       </div>
