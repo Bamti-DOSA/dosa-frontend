@@ -187,83 +187,6 @@ const AssistantAi = ({
     setSelectedFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  // const handleSendMessage = async () => {
-  //   if (
-  //     (!inputValue.trim() && selectedFiles.length === 0) ||
-  //     isLoading ||
-  //     !modelName ||
-  //     !currentChatId
-  //   ) {
-  //     console.log("전송 차단됨:", {
-  //       inputValue: !inputValue.trim(),
-  //       isLoading,
-  //       modelName: !modelName,
-  //       currentChatId: !currentChatId,
-  //     }); // 이 로그를 추가해서 범인을 찾으세요!
-  //     return;
-  //   }
-
-  //   // 1. 유효성 검사 (입력값이나 파일이 없으면 중단)
-  //   if (
-  //     (!inputValue.trim() && selectedFiles.length === 0) ||
-  //     isLoading ||
-  //     !modelName ||
-  //     !currentChatId
-  //   ) {
-  //     return;
-  //   }
-
-  //   const userText = inputValue;
-  //   const userAttachments = [...selectedFiles];
-
-  //   const newUserMsg = {
-  //     id: Date.now(),
-  //     role: "user",
-  //     content: userText,
-  //     attachments: userAttachments,
-  //   };
-
-  //   // UI 즉시 반영 및 입력창 초기화
-  //   const updatedWithUser = [...messages, newUserMsg];
-  //   setMessages(updatedWithUser);
-  //   setInputValue("");
-  //   setSelectedFiles([]);
-  //   setIsLoading(true);
-
-  //   try {
-  //     // 2. 유저 메시지 먼저 DB 저장
-  //     await saveChat({
-  //       chatId: Number(currentChatId),
-  //       modelId: String(modelId),
-  //       messages: updatedWithUser,
-  //       lastUpdated: Date.now(),
-  //     });
-
-  //     // 3. AI 응답 호출
-  //     const aiReply = await fetchAiResponse(modelName, userText);
-  //     const newAiMsg = {
-  //       id: Date.now() + 1,
-  //       role: "assistant",
-  //       content: aiReply,
-  //     };
-
-  //     // 4. AI 응답 포함 최종 상태 업데이트 및 DB 저장
-  //     const finalMessages = [...updatedWithUser, newAiMsg];
-  //     setMessages(finalMessages);
-
-  //     await saveChat({
-  //       chatId: Number(currentChatId),
-  //       modelId: String(modelId),
-  //       messages: finalMessages,
-  //       lastUpdated: Date.now(),
-  //     });
-  //   } catch (error) {
-  //     console.error("메시지 처리 중 오류 발생:", error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   if (isDbLoading)
     return (
       <div className="h-full flex items-center justify-center text-gray-400">
@@ -373,14 +296,19 @@ const AssistantAi = ({
             placeholder={
               !modelName ? "모델 정보를 불러오는 중..." : "메시지를 입력하세요."
             }
-            className="outline-none flex-1 p-2 bg-transparent b-16-med"
+            className="outline-none flex- min-w-0 p-2 bg-transparent b-16-med"
           />
           <button
             onClick={handleSendMessage}
             disabled={
               (!inputValue.trim() && selectedFiles.length === 0) || isLoading
             }
-            className="p-2 rounded-full text-white bg-main-1 hover:bg-bg-1 hover:text-main-1 disabled:bg-gray-300"
+            className={`p-2 rounded-full text-white transition-colors 
+    ${
+      (!inputValue.trim() && selectedFiles.length === 0) || isLoading
+        ? "bg-gray-300 " // 비활성화 시: 회색 배경 + 금지 커서
+        : "bg-main-1 hover:bg-bg-1 hover:text-main-1" // 활성화 시: 원래 색상 + 호버 효과
+    }`}
           >
             <ArrowUp size={20} />
           </button>

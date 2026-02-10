@@ -12,6 +12,7 @@ const AiNote = ({ onClose, onMaximize, modelId }) => {
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [messages, setMessages] = useState([]);
 
   // 상태 초기화
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -152,11 +153,9 @@ const AiNote = ({ onClose, onMaximize, modelId }) => {
     >
       <div
         onMouseDown={handleMouseDown}
-        className="h-12 bg-white flex justify-between items-center px-4 cursor-move border-b shrink-0"
+        className="h-14 bg-white flex justify-between items-center px-4 cursor-move  shrink-0"
       >
-        <span className="font-bold text-[14px] text-gray-800">
-          AI 어시스턴트
-        </span>
+        <span className="t-18-bold p-2 text-gray-800">AI 어시스턴트</span>
         <div className="flex gap-1">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -168,7 +167,7 @@ const AiNote = ({ onClose, onMaximize, modelId }) => {
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-black"
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
       </div>
@@ -187,6 +186,8 @@ const AiNote = ({ onClose, onMaximize, modelId }) => {
             modelName={modelName}
             currentChatId={currentChatId}
             setCurrentChatId={setCurrentChatId}
+            messages={messages}
+            setMessages={setMessages}
           />
         )}
       </div>
