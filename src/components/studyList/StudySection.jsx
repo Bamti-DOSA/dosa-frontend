@@ -72,7 +72,7 @@ const StudySection = ({ category, models, filterType }) => {
               date={model.updatedAt || "2026. 02. 07"}
               // 👇 DB에서 계산된 상태 적용
               isInProgress={model.computedStatus === "IN_PROGRESS"}
-              imgUrl={model.thumbnailUrl}
+              thumbnailUrl={model.thumbnailUrl}
             />
           ))
         ) : (
