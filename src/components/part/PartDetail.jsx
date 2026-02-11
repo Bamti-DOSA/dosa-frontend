@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import { MATERIAL_LIST } from "../../db/materialDB";
 
-const PartDetail = ({ selectedPart, onMaterialSelect }) => {
+const PartDetail = ({ selectedPart, onMaterialSelect, onHeightChange }) => {
   const [leftWidth, setLeftWidth] = useState(65);
   const [height, setHeight] = useState(200);
   const [isHidden, setIsHidden] = useState(false);
@@ -11,6 +11,23 @@ const PartDetail = ({ selectedPart, onMaterialSelect }) => {
     name: "기본 재질",
     desc: "기체 설계 시 표준으로 적용되는 경량 합성 소재입니다.",
   });
+
+  // 높이가 바뀔 때마다 부모(LeftContainer)에게 알림
+  useEffect(() => {
+    if (onHeightChange) {
+      // 숨겨진 상태일 때는 최소 높이(40)만 반영, 아닐 때는 현재 높이 반영
+      onHeightChange(isHidden ? 40 : height);
+    }
+  }, [height, isHidden, onHeightChange]);
+
+  // 💡 2. 높이 제한 설정: 슬라이더 전까지만 올라가도록 maxHeight 조절
+  // 윈도우 높이에 따라 적절히 제한 (예: 264px)
+  const handleResize = (moveE) => {
+    const deltaY = startY - moveE.clientY;
+    const newHeight = startHeight + deltaY;
+    // 최대 높이를 264px 정도로 제한하여 슬라이더 영역을 지키도록 함
+    setHeight(Math.min(Math.max(newHeight, 120), 264));
+  };
 
   // 재질 데이터 예시 (나중에 실제 데이터로 교체하세요)
   // const materialList = [
@@ -80,11 +97,11 @@ const PartDetail = ({ selectedPart, onMaterialSelect }) => {
         display: "flex",
         height: `${height}px`,
         position: "absolute",
-        left: "150px",
-        right: "40px",
-        bottom: "20px",
+        width: "100%",
+        bottom: "0px",
         zIndex: 40,
         gap: "2px",
+        padding: "0 10px 10px 10px",
       }}
       className="pointer-events-auto"
     >
@@ -99,7 +116,7 @@ const PartDetail = ({ selectedPart, onMaterialSelect }) => {
           const onMouseMove = (moveE) => {
             const deltaY = startY - moveE.clientY;
             const newHeight = startHeight + deltaY;
-            setHeight(Math.min(Math.max(newHeight, 120), 264));
+            setHeight(Math.min(Math.max(newHeight, 150), 200));
           };
           const onMouseUp = () => {
             document.removeEventListener("mousemove", onMouseMove);

@@ -31,11 +31,14 @@ const StudyCard = ({
       }
 
       try {
-        if (thumbnailUrl.startsWith('http://') || thumbnailUrl.startsWith('https://')) {
+        if (
+          thumbnailUrl.startsWith("http://") ||
+          thumbnailUrl.startsWith("https://")
+        ) {
           setImageUrl(thumbnailUrl);
         } else {
           const signedUrl = await getAssemblyModelSignedUrl(thumbnailUrl);
-          if (signedUrl && signedUrl.startsWith('http')) {
+          if (signedUrl && signedUrl.startsWith("http")) {
             setImageUrl(signedUrl);
           }
         }
@@ -73,17 +76,17 @@ const StudyCard = ({
   return (
     <div
       onClick={handleCardClick}
-      className="bg-white flex flex-col w-[248px] h-[256px] p-[16px] rounded-[8px] cursor-pointer hover:shadow-lg transition-shadow relative"
+      className="bg-white flex flex-col w-[248px] h-[256px] p-[16px] rounded-[8px] hover:shadow-md cursor-pointer  transition-shadow relative"
     >
       {/* 썸네일 이미지 - 중앙 정렬 */}
       {imageUrl && (
         <div className="absolute inset-0 flex items-center justify-center z-0 opacity-30 pointer-events-none">
-          <img 
-            src={imageUrl} 
-            alt={title} 
+          <img
+            src={imageUrl}
+            alt={title}
             className="max-w-[200px] max-h-[180px] object-contain"
             onError={(e) => {
-              e.target.style.display = 'none';
+              e.target.style.display = "none";
             }}
           />
         </div>
@@ -116,7 +119,7 @@ const StudyCard = ({
         </div>
         <button
           className={
-            "text-white py-[8px] px-[10px] w-full rounded-[8px] b-16-semi transition-colors " +
+            "text-white py-[8px] px-[10px] w-full rounded-[8px] cursor-pointer b-16-semi transition-colors " +
             (isInProgress
               ? "bg-acc-red-light hover:bg-acc-red"
               : "bg-gray-7 hover:bg-gray-8")

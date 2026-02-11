@@ -4,78 +4,114 @@ import StudySection from "../components/studyList/StudySection";
 import React, { useEffect, useState } from "react";
 import { getModels } from "../api/modelAPI";
 import { getChatsByModel, getMemosByModel } from "../api/aiDB";
+import { ArrowRight } from "lucide-react"; // ✅ 아이콘 추가
+
+// 날짜 포맷팅 함수
+const formatDate = (timestamp) => {
+  if (!timestamp) return "날짜 없음";
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}. ${month}. ${day}`;
+};
 
 const StudyList = () => {
-  const [allModels, setAllModels] = useState([]);
-  const [filteredModels, setFilteredModels] = useState([]); // 필터링된 상태 관리
+  const [allModels, setAllModels] = useState([]); // 서버 원본 데이터
+  const [processedModels, setProcessedModels] = useState([]); // 날짜 정보가 포함된 전체 데이터 ✅ 추가
+  const [filteredModels, setFilteredModels] = useState([]);
+  const [inProgressForHome, setInProgressForHome] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState("홈");
 
-  // 1. 초기 데이터 로드
+  // 1. 초기 데이터 가져오기
   useEffect(() => {
-    const loadAllData = async () => {
+    const initData = async () => {
       try {
         const data = await getModels();
-        setAllModels(Array.isArray(data) ? data : []);
+        const modelData = Array.isArray(data) ? data : [];
+        setAllModels(modelData);
       } catch (error) {
         console.error("❌ 데이터 로딩 실패:", error);
-        setAllModels([]);
       } finally {
         setLoading(false);
       }
     };
-    loadAllData();
+    initData();
   }, []);
 
-  // 2. 💡 [필터링 로직 핵심] 메뉴가 바뀔 때마다 실행되는 효과
+  // 2. 통합 필터링 로직
   useEffect(() => {
-    const applyFilter = async () => {
-      if (activeMenu === "홈") {
-        setFilteredModels(allModels);
-        return;
-      }
+    const processData = async () => {
+      if (allModels.length === 0) return;
 
-      if (activeMenu === "북마크") {
+      // 1. 모든 모델에 대해 날짜 정보 병합 작업 진행
+      const modelsWithStatus = await Promise.all(
+        allModels.map(async (model) => {
+          try {
+            const modelIdStr = String(model.objectId);
+            const chats = await getChatsByModel(modelIdStr);
+            const memos = await getMemosByModel(modelIdStr);
+
+            const allActivities = [
+              ...(chats || []).map(
+                (c) => new Date(c.lastUpdated || c.timestamp || 0),
+              ),
+              ...(memos || []).map((m) => new Date(m.date || m.createdAt || 0)),
+            ].filter((date) => !isNaN(date.getTime()));
+
+            if (allActivities.length > 0) {
+              const latestDate = new Date(Math.max(...allActivities));
+              return {
+                ...model,
+                lastStudyDateStr: formatDate(latestDate),
+                lastTimestamp: latestDate.getTime(),
+                isInProgress: true,
+              };
+            }
+            // 활동 내역이 없더라도 원본 데이터는 유지하되 날짜만 없음으로 표시
+            return { ...model, lastStudyDateStr: null, isInProgress: false };
+          } catch (e) {
+            return { ...model, lastStudyDateStr: null, isInProgress: false };
+          }
+        }),
+      );
+
+      // 2. 가공된 전체 데이터를 저장 ✅ (이게 핵심입니다)
+      setProcessedModels(modelsWithStatus);
+
+      // 3. 진행 중인 리스트 (홈 상단 슬라이드용)
+      const inProgressList = modelsWithStatus
+        .filter((m) => m.isInProgress)
+        .sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+      setInProgressForHome(inProgressList);
+
+      // 4. 메뉴별 필터링
+      if (activeMenu === "홈") {
+        setFilteredModels(modelsWithStatus); // allModels 대신 가공된 데이터 사용
+      } else if (activeMenu === "진행 중인 학습") {
+        setFilteredModels(inProgressList);
+      } else if (activeMenu === "북마크") {
         const bookmarks = JSON.parse(
           localStorage.getItem("bookmarked_models") || "[]",
         );
-        const filtered = allModels.filter((m) =>
-          bookmarks.includes(m.objectId),
+        setFilteredModels(
+          modelsWithStatus.filter((m) => bookmarks.includes(m.objectId)),
         );
-        setFilteredModels(filtered);
-        return;
-      }
-
-      if (activeMenu === "진행 중인 학습") {
-        // ✨ DB 기록(채팅/메모)이 있는지 하나씩 확인
-        const statusResults = await Promise.all(
-          allModels.map(async (model) => {
-            const chats = await getChatsByModel(String(model.objectId));
-            const memos = await getMemosByModel(String(model.objectId));
-            const isStarted =
-              (chats && chats.length > 0) || (memos && memos.length > 0);
-            return isStarted ? model : null;
-          }),
-        );
-        setFilteredModels(statusResults.filter((m) => m !== null));
-        return;
       }
     };
 
-    applyFilter();
-  }, [activeMenu, allModels]); // 메뉴나 모델 리스트가 바뀌면 다시 필터링
+    processData();
+  }, [activeMenu, allModels]);
 
   if (loading)
     return (
       <div className="ml-[275px] p-10 text-gray-400">데이터 로딩 중...</div>
     );
 
-  // 상단 슬라이드용 (서버 status 기준 유지)
-  const inProgressForHome = allModels.filter((m) => m.status === "IN_PROGRESS");
-
-  // 💡 카테고리는 '필터링된 결과'에서만 추출
+  const displayModels = filteredModels;
   const categories = [
-    ...new Set(filteredModels.map((item) => item.type)),
+    ...new Set(displayModels.map((item) => item.type)),
   ].filter(Boolean);
 
   return (
@@ -85,24 +121,40 @@ const StudyList = () => {
         setActiveMenu={setActiveMenu}
         allModels={allModels}
       />
+
       <div className="ml-[275px] px-[60px] py-[46px] w-full">
         <div className="mt-[46px] t-24-semi text-gray-900">
           {activeMenu === "홈" ? "학습 페이지" : activeMenu}
         </div>
 
-        {/* 홈 메뉴일 때만 상단 슬라이드 노출 */}
+        {/* 🟢 상단 슬라이드 영역 수정됨 */}
         {activeMenu === "홈" && inProgressForHome.length > 0 && (
           <div className="mt-[60px] mb-[40px]">
-            <div className="t-18-semi mb-[24px]">진행 중인 학습</div>
-            <div className="flex flex-row gap-[16px] overflow-x-auto pb-4">
-              {inProgressForHome.map((model) => (
+            {/* 타이틀 + 전체보기 버튼 배치 */}
+            <div className="flex justify-between items-center mb-[24px]">
+              <div className="t-18-semi">진행 중인 학습</div>
+
+              {/* ✅ 3개보다 많으면 전체보기 버튼 노출 */}
+              {inProgressForHome.length > 3 && (
+                <div
+                  className="gap-[8px] flex flex-row text-[#5A5A5A] font-semibold cursor-pointer hover:text-black items-center b-16-semi"
+                  onClick={() => setActiveMenu("진행 중인 학습")} // 클릭 시 메뉴 변경
+                >
+                  전체보기 <ArrowRight size={20} color="#5A5A5A" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-row gap-[16px] overflow-x-auto pb-4 scrollbar-hide">
+              {/* ✅ 여기서 .slice(0, 3)을 해줘야 3개만 나옵니다! */}
+              {inProgressForHome.slice(0, 3).map((model) => (
                 <StudyCard
-                  key={`home-${model.objectId}`}
+                  key={`home-slide-${model.objectId}`}
                   objectId={model.objectId}
                   title={model.name}
                   category={model.type}
                   isInProgress={true}
-                  date={model.updatedAt || "2026. 02. 07"}
+                  date={model.lastStudyDateStr || "날짜 없음"}
                   thumbnailUrl={model.thumbnailUrl}
                 />
               ))}
@@ -111,14 +163,14 @@ const StudyList = () => {
           </div>
         )}
 
-        {/* 필터링된 결과 섹션 */}
+        {/* 하단 섹션 영역 */}
         <div className="mt-[40px] flex flex-col gap-[60px]">
           {categories.length > 0 ? (
             categories.map((catName) => (
               <StudySection
                 key={`${activeMenu}-${catName}`}
                 category={catName}
-                models={filteredModels.filter((m) => m.type === catName)}
+                models={displayModels.filter((m) => m.type === catName)}
                 filterType={activeMenu}
               />
             ))
