@@ -17,7 +17,8 @@ const formatDate = (timestamp) => {
 };
 
 const StudyList = () => {
-  const [allModels, setAllModels] = useState([]);
+  const [allModels, setAllModels] = useState([]); // 서버 원본 데이터
+  const [processedModels, setProcessedModels] = useState([]); // 날짜 정보가 포함된 전체 데이터 ✅ 추가
   const [filteredModels, setFilteredModels] = useState([]);
   const [inProgressForHome, setInProgressForHome] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,7 @@ const StudyList = () => {
     const processData = async () => {
       if (allModels.length === 0) return;
 
+      // 1. 모든 모델에 대해 날짜 정보 병합 작업 진행
       const modelsWithStatus = await Promise.all(
         allModels.map(async (model) => {
           try {
@@ -52,41 +54,50 @@ const StudyList = () => {
             const memos = await getMemosByModel(modelIdStr);
 
             const allActivities = [
-              ...(chats || []).map(c => new Date(c.lastUpdated || c.timestamp || 0)),
-              ...(memos || []).map(m => new Date(m.date || m.createdAt || 0))
-            ].filter(date => !isNaN(date.getTime()));
+              ...(chats || []).map(
+                (c) => new Date(c.lastUpdated || c.timestamp || 0),
+              ),
+              ...(memos || []).map((m) => new Date(m.date || m.createdAt || 0)),
+            ].filter((date) => !isNaN(date.getTime()));
 
-            const isStarted = allActivities.length > 0;
-
-            if (isStarted) {
+            if (allActivities.length > 0) {
               const latestDate = new Date(Math.max(...allActivities));
               return {
                 ...model,
                 lastStudyDateStr: formatDate(latestDate),
-                lastTimestamp: latestDate.getTime()
+                lastTimestamp: latestDate.getTime(),
+                isInProgress: true,
               };
             }
-            return null;
+            // 활동 내역이 없더라도 원본 데이터는 유지하되 날짜만 없음으로 표시
+            return { ...model, lastStudyDateStr: null, isInProgress: false };
           } catch (e) {
-            console.error("상태 확인 중 에러:", e);
-            return null;
+            return { ...model, lastStudyDateStr: null, isInProgress: false };
           }
-        })
+        }),
       );
 
-      const inProgressList = modelsWithStatus
-        .filter((m) => m !== null)
-        .sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+      // 2. 가공된 전체 데이터를 저장 ✅ (이게 핵심입니다)
+      setProcessedModels(modelsWithStatus);
 
+      // 3. 진행 중인 리스트 (홈 상단 슬라이드용)
+      const inProgressList = modelsWithStatus
+        .filter((m) => m.isInProgress)
+        .sort((a, b) => b.lastTimestamp - a.lastTimestamp);
       setInProgressForHome(inProgressList);
 
+      // 4. 메뉴별 필터링
       if (activeMenu === "홈") {
-        setFilteredModels(allModels);
+        setFilteredModels(modelsWithStatus); // allModels 대신 가공된 데이터 사용
       } else if (activeMenu === "진행 중인 학습") {
         setFilteredModels(inProgressList);
       } else if (activeMenu === "북마크") {
-        const bookmarks = JSON.parse(localStorage.getItem("bookmarked_models") || "[]");
-        setFilteredModels(allModels.filter((m) => bookmarks.includes(m.objectId)));
+        const bookmarks = JSON.parse(
+          localStorage.getItem("bookmarked_models") || "[]",
+        );
+        setFilteredModels(
+          modelsWithStatus.filter((m) => bookmarks.includes(m.objectId)),
+        );
       }
     };
 
@@ -98,8 +109,10 @@ const StudyList = () => {
       <div className="ml-[275px] p-10 text-gray-400">데이터 로딩 중...</div>
     );
 
-  const displayModels = activeMenu === "홈" ? allModels : filteredModels;
-  const categories = [...new Set(displayModels.map((item) => item.type))].filter(Boolean);
+  const displayModels = filteredModels;
+  const categories = [
+    ...new Set(displayModels.map((item) => item.type)),
+  ].filter(Boolean);
 
   return (
     <div className="flex flex-row min-h-screen bg-gray-50">
@@ -120,10 +133,10 @@ const StudyList = () => {
             {/* 타이틀 + 전체보기 버튼 배치 */}
             <div className="flex justify-between items-center mb-[24px]">
               <div className="t-18-semi">진행 중인 학습</div>
-              
+
               {/* ✅ 3개보다 많으면 전체보기 버튼 노출 */}
               {inProgressForHome.length > 3 && (
-                <div 
+                <div
                   className="gap-[8px] flex flex-row text-[#5A5A5A] font-semibold cursor-pointer hover:text-black items-center b-16-semi"
                   onClick={() => setActiveMenu("진행 중인 학습")} // 클릭 시 메뉴 변경
                 >
@@ -141,7 +154,7 @@ const StudyList = () => {
                   title={model.name}
                   category={model.type}
                   isInProgress={true}
-                  date={model.lastStudyDateStr || "날짜 없음"} 
+                  date={model.lastStudyDateStr || "날짜 없음"}
                   thumbnailUrl={model.thumbnailUrl}
                 />
               ))}
