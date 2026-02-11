@@ -1,4 +1,10 @@
-import React, { useState, useEffect, Suspense, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  Suspense,
+  useRef,
+  useCallback,
+} from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -41,7 +47,7 @@ async function calculateModelCenter(modelPath) {
         resolve({ x: center.x, y: center.y, z: center.z });
       },
       undefined,
-      () => resolve({ x: 0, y: 0, z: 0 })
+      () => resolve({ x: 0, y: 0, z: 0 }),
     );
   });
 }
@@ -56,9 +62,12 @@ function SinglePartModel({ modelPath, overrideMaterial }) {
       if (child.isMesh) {
         child.material = child.material.clone();
         if (overrideMaterial) {
-          if (overrideMaterial.color) child.material.color.set(overrideMaterial.color);
-          if (overrideMaterial.metalness !== undefined) child.material.metalness = overrideMaterial.metalness;
-          if (overrideMaterial.roughness !== undefined) child.material.roughness = overrideMaterial.roughness;
+          if (overrideMaterial.color)
+            child.material.color.set(overrideMaterial.color);
+          if (overrideMaterial.metalness !== undefined)
+            child.material.metalness = overrideMaterial.metalness;
+          if (overrideMaterial.roughness !== undefined)
+            child.material.roughness = overrideMaterial.roughness;
         } else {
           child.material.color.set("#bbbbbb");
           child.material.metalness = 0;
@@ -69,7 +78,11 @@ function SinglePartModel({ modelPath, overrideMaterial }) {
     });
   }, [overrideMaterial, scene]);
 
-  return <Center><primitive object={scene} /></Center>;
+  return (
+    <Center>
+      <primitive object={scene} />
+    </Center>
+  );
 }
 
 const LeftContainer = ({
@@ -126,11 +139,12 @@ const LeftContainer = ({
         const result = await fetchAiBriefing(modelChats[0].messages.slice(-10)); // 간단 예시
         if (result) setBriefingData(result.data || result);
         setShowBriefing(true);
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     };
     loadBriefing();
   }, [modelId]);
-
 
   const currentPart = transformedParts.find((p) => p.id === selectedId);
   const assemblyPart = transformedParts.find((p) => p.isAssembly);
@@ -157,7 +171,7 @@ const LeftContainer = ({
       } else {
         // 2. 없으면 초기 위치 계산 (회전/크기는 기본값 0/1 할당)
         const center = await calculateModelCenter(selectedPart.model);
-        
+
         // 🚨 여기서 setCurrentPosition이 아니라 setCurrentTransform을 써야 합니다!
         setCurrentTransform({
           position: center,
@@ -173,28 +187,27 @@ const LeftContainer = ({
   };
 
   // ✅ [수정됨] 실시간 Transform 업데이트 핸들러
-  const handleTransformUpdate = useCallback((meshName, newTransform) => {
-      
+  const handleTransformUpdate = useCallback(
+    (meshName, newTransform) => {
       // 1. 현재 선택된 부품이라면 UI 업데이트
       if (currentPart?.meshName === meshName) {
-        
         setCurrentTransform((prev) => {
           const threshold = 0.0001; // 감지 민감도
 
           // 1) 위치 비교
-          const posChanged = 
+          const posChanged =
             Math.abs(prev.position.x - newTransform.position.x) > threshold ||
             Math.abs(prev.position.y - newTransform.position.y) > threshold ||
             Math.abs(prev.position.z - newTransform.position.z) > threshold;
 
           // 2) 회전 비교 (중요!)
-          const rotChanged = 
+          const rotChanged =
             Math.abs(prev.rotation.x - newTransform.rotation.x) > threshold ||
             Math.abs(prev.rotation.y - newTransform.rotation.y) > threshold ||
             Math.abs(prev.rotation.z - newTransform.rotation.z) > threshold;
 
           // 3) 크기 비교
-          const sclChanged = 
+          const sclChanged =
             Math.abs(prev.scale.x - newTransform.scale.x) > threshold ||
             Math.abs(prev.scale.y - newTransform.scale.y) > threshold ||
             Math.abs(prev.scale.z - newTransform.scale.z) > threshold;
@@ -203,7 +216,7 @@ const LeftContainer = ({
           if (posChanged || rotChanged || sclChanged) {
             return newTransform;
           }
-          
+
           // 변한 게 없으면 기존 값 유지 (리렌더링 방지)
           return prev;
         });
@@ -215,7 +228,7 @@ const LeftContainer = ({
         return { ...prev, [meshName]: newTransform };
       });
     },
-    [currentPart] // 의존성
+    [currentPart], // 의존성
   );
 
   // ✅ [수정됨] 프레임 0으로 리셋 시 초기값 복원
@@ -234,7 +247,7 @@ const LeftContainer = ({
 
       const assembly = mapped.find((p) => p.isAssembly);
       const first = mapped[0];
-      
+
       // 초기 선택 로직
       if (!selectedId) {
         const target = assembly || first;
@@ -243,19 +256,18 @@ const LeftContainer = ({
           if (target.model) {
             const center = await calculateModelCenter(target.model);
             const initialData = {
-                position: center,
-                rotation: { x: 0, y: 0, z: 0 },
-                scale: { x: 1, y: 1, z: 1 }
+              position: center,
+              rotation: { x: 0, y: 0, z: 0 },
+              scale: { x: 1, y: 1, z: 1 },
             };
             setCurrentTransform(initialData); // 🚨 수정
-            setBaseTransform(initialData);    // 🚨 수정
+            setBaseTransform(initialData); // 🚨 수정
           }
         }
       }
     };
     if (apiData) loadParts();
   }, [apiData]);
-
 
   return (
     <div className="bg-white w-full h-full flex flex-row p-4 gap-1 relative overflow-hidden rounded-[8px]">
@@ -286,7 +298,10 @@ const LeftContainer = ({
         >
           <div className="absolute inset-0 z-0">
             {assemblyPart?.model && showAssembly ? (
-              <Canvas shadows={isLightOn} camera={{ position: [4, 0, 4], fov: 50 }}>
+              <Canvas
+                shadows={isLightOn}
+                camera={{ position: [4, 0, 4], fov: 50 }}
+              >
                 <Suspense fallback={null}>
                   <Stage
                     environment="city"
@@ -299,9 +314,10 @@ const LeftContainer = ({
                         url={assemblyPart.model}
                         currentFrame={currentFrame}
                         totalFrames={totalFrames}
-                        selectedPartMesh={currentPart?.isAssembly ? null : currentPart?.meshName}
+                        selectedPartMesh={
+                          currentPart?.isAssembly ? null : currentPart?.meshName
+                        }
                         overrideMaterial={activeMaterial}
-                        
                         // 🚨 중요: onTransformUpdate 콜백 연결
                         onTransformUpdate={handleTransformUpdate}
                       />
@@ -310,36 +326,66 @@ const LeftContainer = ({
                 </Suspense>
                 <OrbitControls makeDefault enablePan={true} />
                 <GizmoHelper alignment="top-right" margin={[80, 80]}>
-                  <GizmoViewport axisColors={["#68A2FF", "#84EBAD", "#FF9191"]} labelColor="white" />
+                  <GizmoViewport
+                    axisColors={["#68A2FF", "#84EBAD", "#FF9191"]}
+                    labelColor="white"
+                  />
                 </GizmoHelper>
               </Canvas>
             ) : currentPart?.model ? (
-              <Canvas shadows={isLightOn} camera={{ position: [4, 0, 4], fov: 50 }}>
+              <Canvas
+                shadows={isLightOn}
+                camera={{ position: [4, 0, 4], fov: 50 }}
+              >
                 <Suspense fallback={null}>
-                  <Stage environment="city" intensity={isLightOn ? 0.6 : 0} shadows={isLightOn ? "contact" : false}>
-                    <SinglePartModel modelPath={currentPart.model} overrideMaterial={activeMaterial} />
+                  <Stage
+                    environment="city"
+                    intensity={isLightOn ? 0.6 : 0}
+                    shadows={isLightOn ? "contact" : false}
+                  >
+                    <SinglePartModel
+                      modelPath={currentPart.model}
+                      overrideMaterial={activeMaterial}
+                    />
                   </Stage>
                 </Suspense>
                 <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} />
                 <GizmoHelper alignment="top-right" margin={[80, 80]}>
-                  <GizmoViewport axisColors={['#68A2FF', '#84EBAD', '#FF9191']} labelColor="white" />
+                  <GizmoViewport
+                    axisColors={["#68A2FF", "#84EBAD", "#FF9191"]}
+                    labelColor="white"
+                  />
                 </GizmoHelper>
               </Canvas>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">모델 로딩 중...</div>
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                모델 로딩 중...
+              </div>
             )}
           </div>
 
           {/* 조명 버튼 */}
           <div className="absolute top-2 right-2 z-50">
-            <button onClick={() => setIsLightOn(!isLightOn)} className="w-14 h-14 flex items-center justify-center hover:scale-105 transition-all">
-              <img src={isLightOn ? LightOnIcon : LightOffIcon} className="w-12 h-12" alt="light" />
+            <button
+              onClick={() => setIsLightOn(!isLightOn)}
+              className="w-14 h-14 flex items-center justify-center hover:scale-105 transition-all"
+            >
+              <img
+                src={isLightOn ? LightOnIcon : LightOffIcon}
+                className="w-12 h-12"
+                alt="light"
+              />
             </button>
           </div>
 
           {/* 브리핑 창 */}
-          <div className="absolute left-4 bottom-24 z-50">
-            {showBriefing && <AiBriefing onClose={() => setShowBriefing(false)} data={briefingData} />}
+          <div className="absolute left-4 bottom-20 z-99999">
+            {showBriefing && (
+              <AiBriefing
+                onClose={() => setShowBriefing(false)}
+                data={briefingData}
+              />
+            )}
           </div>
 
           {/* 🚨 중요: 좌표 표시창 (transform prop 전달) */}
@@ -348,8 +394,15 @@ const LeftContainer = ({
           </div>
 
           {/* 브리핑 아이콘 */}
-          <button onClick={() => setShowBriefing(!showBriefing)} className="absolute left-4 bottom-12 z-50 hover:scale-110 transition-all">
-            <img src={showBriefing ? AiBriefingIcon : AiNotBriefingIcon} className="w-8 h-8" alt="ai" />
+          <button
+            onClick={() => setShowBriefing(!showBriefing)}
+            className="absolute left-4 bottom-10.5 z-50 hover:scale-110 transition-all"
+          >
+            <img
+              src={showBriefing ? AiBriefingIcon : AiNotBriefingIcon}
+              className="w-8 h-8"
+              alt="ai"
+            />
           </button>
 
           {/* 슬라이더 */}
@@ -369,7 +422,10 @@ const LeftContainer = ({
         </div>
 
         {/* 하단 설명창 */}
-        <div style={{ height: `${detailHeight}px` }} className="w-full shrink-0 z-50">
+        <div
+          style={{ height: `${detailHeight}px` }}
+          className="w-full shrink-0 z-50"
+        >
           <PartDetail
             selectedPart={currentPart}
             onMaterialSelect={handleMaterialSelect}

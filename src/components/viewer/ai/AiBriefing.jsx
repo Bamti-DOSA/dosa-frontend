@@ -50,7 +50,7 @@ const AiBriefing = ({ onClose, className = "", data }) => {
       {hasData ? (
         <>
           <p className="b-14-semi text-main-1 mb-[14px]">{parsedData.title}</p>
-          <div className="b-14-med text-gray-9 space-y-2 leading-relaxed max-h-[300px] overflow-y-auto thin-scrollbar pr-2">
+          <div className="b-14-med text-gray-9 space-y-2 leading-relaxed max-h-[290px] overflow-y-auto thin-scrollbar pr-2">
             <ul className="space-y-4">
               {parsedData.items.map((item, index) => (
                 <li key={index} className="flex gap-2 items-start">
