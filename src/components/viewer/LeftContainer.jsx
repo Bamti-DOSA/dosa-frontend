@@ -173,21 +173,49 @@ const LeftContainer = ({
   };
 
   // ✅ [수정됨] 실시간 Transform 업데이트 핸들러
-  const handleTransformUpdate = useCallback((meshName, transformData) => {
-      // 1. 현재 선택된 부품이라면 UI 즉시 업데이트
+  const handleTransformUpdate = useCallback((meshName, newTransform) => {
+      
+      // 1. 현재 선택된 부품이라면 UI 업데이트
       if (currentPart?.meshName === meshName) {
-        // 성능 최적화: 값이 유의미하게 변했을 때만 setState
-        // (여기서는 단순화를 위해 매번 업데이트하지만, 필요시 useRef로 throttle 가능)
-        setCurrentTransform(transformData);
+        
+        setCurrentTransform((prev) => {
+          const threshold = 0.0001; // 감지 민감도
+
+          // 1) 위치 비교
+          const posChanged = 
+            Math.abs(prev.position.x - newTransform.position.x) > threshold ||
+            Math.abs(prev.position.y - newTransform.position.y) > threshold ||
+            Math.abs(prev.position.z - newTransform.position.z) > threshold;
+
+          // 2) 회전 비교 (중요!)
+          const rotChanged = 
+            Math.abs(prev.rotation.x - newTransform.rotation.x) > threshold ||
+            Math.abs(prev.rotation.y - newTransform.rotation.y) > threshold ||
+            Math.abs(prev.rotation.z - newTransform.rotation.z) > threshold;
+
+          // 3) 크기 비교
+          const sclChanged = 
+            Math.abs(prev.scale.x - newTransform.scale.x) > threshold ||
+            Math.abs(prev.scale.y - newTransform.scale.y) > threshold ||
+            Math.abs(prev.scale.z - newTransform.scale.z) > threshold;
+
+          // 하나라도 변했으면 새 값으로 업데이트
+          if (posChanged || rotChanged || sclChanged) {
+            return newTransform;
+          }
+          
+          // 변한 게 없으면 기존 값 유지 (리렌더링 방지)
+          return prev;
+        });
       }
 
-      // 2. 백그라운드 데이터 저장 (나중에 부품 클릭 시 복원용)
-      setAnimatedTransforms((prev) => ({
-        ...prev,
-        [meshName]: transformData
-      }));
+      // 2. 백그라운드 데이터 저장
+      setAnimatedTransforms((prev) => {
+        // (선택 사항) 여기도 동일한 비교 로직을 넣으면 메모리 최적화 가능
+        return { ...prev, [meshName]: newTransform };
+      });
     },
-    [currentPart]
+    [currentPart] // 의존성
   );
 
   // ✅ [수정됨] 프레임 0으로 리셋 시 초기값 복원

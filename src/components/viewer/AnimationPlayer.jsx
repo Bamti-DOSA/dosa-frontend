@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useGLTF } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 function AnimationPlayer({
@@ -81,38 +82,6 @@ function AnimationPlayer({
     mat.emissiveIntensity = 0;
   };
 
-  // --- 메인 로직 ---
-  // useEffect(() => {
-  //   if (!gltf.scene) return;
-
-  //   gltf.scene.traverse((child) => {
-  //     if (child.isMesh) {
-  //       const isTarget = selectedPartMesh
-  //         ? isNameMatch(child.name, selectedPartMesh)
-  //         : false;
-
-  //       if (selectedPartMesh) {
-  //         if (isTarget) {
-  //           if (overrideMaterial) {
-  //             applyPropsToMaterial(child.material, overrideMaterial);
-  //           } else {
-  //             applyBlueHighlight(child.material);
-  //           }
-  //         } else {
-  //           applyDefaultGrey(child.material);
-  //         }
-  //       } else {
-  //         if (overrideMaterial) {
-  //           applyPropsToMaterial(child.material, overrideMaterial);
-  //         } else {
-  //           applyDefaultGrey(child.material);
-  //         }
-  //       }
-  //       child.material.needsUpdate = true;
-  //     }
-  //   });
-  // }, [selectedPartMesh, overrideMaterial, gltf.scene]);
-
   useEffect(() => {
     if (!gltf.scene) return;
 
@@ -131,7 +100,7 @@ function AnimationPlayer({
             // 재질이 선택된 경우 (카본, 알루미늄 등 적용)
             applyPropsToMaterial(child.material, overrideMaterial);
           } else {
-            // 🚨 핵심 수정 구간: 기본 재질(null)을 선택했을 때
+            // 기본 재질(null)을 선택했을 때
             if (isAssemblyMode) {
               // 전체 모드라면 하이라이트 없이 기본 회색으로!
               applyDefaultGrey(child.material);
@@ -149,10 +118,11 @@ function AnimationPlayer({
     });
   }, [selectedPartMesh, overrideMaterial, gltf.scene]);
 
-  // 3. 애니메이션 프레임 제어 + ✅ 4단계: 위치 업데이트
-  useEffect(() => {
+  // 3. 애니메이션 프레임 제어 + 위치 업데이트
+ useEffect(() => {
     if (!mixerRef.current || actionsRef.current.length === 0) return;
 
+    // ... (애니메이션 시간 업데이트 로직 기존 유지) ...
     const normalizedTime = Math.max(0, Math.min(1, currentFrame / totalFrames));
     actionsRef.current.forEach((action) => {
       const clip = action.getClip();
@@ -161,32 +131,41 @@ function AnimationPlayer({
     });
     mixerRef.current.update(0);
 
-    // ✅ 4단계: 애니메이션 후 모든 메쉬의 중심 좌표 계산 및 콜백 호출
+    // Transform 데이터 추출 로직
     if (onTransformUpdate && currentFrame > 0) {
       gltf.scene.traverse((child) => {
         if (child.isMesh) {
           child.updateMatrixWorld(true);
           
-          // 1. Position (Bounding Box Center)
+          // 1. Position (World Position) - 기존 유지
           const box = new THREE.Box3().setFromObject(child);
           const center = new THREE.Vector3();
           box.getCenter(center);
 
-          // 2. Rotation (Euler angles)
+          // 2. Rotation (World Rotation)
+          const worldQuaternion = new THREE.Quaternion();
+          child.getWorldQuaternion(worldQuaternion);
+          
+          const worldEuler = new THREE.Euler();
+          worldEuler.setFromQuaternion(worldQuaternion); // 쿼터니언 -> 오일러 각도 변환
+
           const rotation = { 
-            x: child.rotation.x, 
-            y: child.rotation.y, 
-            z: child.rotation.z 
+            x: worldEuler.x, 
+            y: worldEuler.y, 
+            z: worldEuler.z 
           };
 
-          // 3. Scale
+          // 3. Scale (World Scale) 
+          const worldScale = new THREE.Vector3();
+          child.getWorldScale(worldScale);
+
           const scale = { 
-            x: child.scale.x, 
-            y: child.scale.y, 
-            z: child.scale.z 
+            x: worldScale.x, 
+            y: worldScale.y, 
+            z: worldScale.z 
           };
 
-          // 콜백으로 모든 데이터 전달
+          // 콜백으로 데이터 전달
           onTransformUpdate(child.name, {
             position: { x: center.x, y: center.y, z: center.z },
             rotation: rotation,
